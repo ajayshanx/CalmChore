@@ -114,8 +114,8 @@ The 'Child Progress' for the logged-in parent should show the information simila
 - Tier
 - Friends
 
-The above should list per child.
-Clicking on the child row should show more details such as List of Friends (Child Name), Last 10 completed chores (Chore Name), Ongoing chores (Chore name) etc.
+The above should list per child, labeled by the child's Nickname (or Username, as a placeholder, before that child's first login and nickname selection).
+Clicking on the child row should show more details such as List of Friends (Nickname), Last 10 completed chores (Chore Name), Ongoing chores (Chore name) etc.
 
 "Validate Chores and Freezes" tab:
 The tab shuld have 2 sections for Chores and then for Freeze requests.
@@ -124,13 +124,13 @@ Chores section:
 - These should be all chores in an unverified status and should show information about the chore requiring verification
 - Info in the list could be:
 -- Chore Name
--- Child Name
+-- Nickname
 -- Submitted On (Date / time)
 -- Deadline (Date / Time)
 -- Points
 -- Proof
 
-Clicking on the row should expand the info as a popup with the same details and the proof photo visible as a preview.
+Clicking on the row should expand the info as a popup with the same details and the proof photo visible as a preview. This is the only window in which the photo is viewable - once the parent picks an outcome below, the photo is permanently deleted (see "Calm Chore Creation.txt").
 The popup should also have 3 buttons in place of wordy text buttons: a custom face icon (drawn in the app's own line-art style, matching the mask figure and badges elsewhere) paired with a short always-visible label - happy face + "Completed", neutral face + "Partially Complete", sad face + "Incomplete". As the app is mobile-first, labels are always shown next to the icon rather than relying on hover.
 Clicking these should change the status of the chore instance to Verified - Complete, Verified - Partially Complete , Incomplete.
 Partially Complete should require input of "Awarded Points" i.e. of the total points, how many are awarded (defaulting to the points field for the chore).
@@ -176,7 +176,7 @@ If the break is applied to a day for which a Chore Freeze was already used - whe
 "Manage for [Child]" tab:
 This tab only appears if the parent has at least one child profile set to Parent-Managed (see "Calm Chore Setup.txt"). It lets a parent track and operate chores on behalf of a child too young to have their own device / login.
 
-If more than one child on the account is Parent-Managed, the tab starts with a child selector (e.g. a dropdown or a row of the children's profile pictures / initials in their accent colour) so the parent can switch between which managed child they are acting on behalf of. The rest of the tab reflects whichever child is currently selected.
+If more than one child on the account is Parent-Managed, the tab starts with a child selector (e.g. a dropdown or a row of the children's nicknames / initials in their accent colour) so the parent can switch between which managed child they are acting on behalf of. The rest of the tab reflects whichever child is currently selected.
 
 For the selected child, this tab mirrors the child login experience, but collapsed into parent-friendly single-step actions:
 - Chore Calendar and chore list, same as the child would see, showing chores assigned to or open for that child.

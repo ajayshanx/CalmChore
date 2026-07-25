@@ -52,7 +52,7 @@ The chore can be directly assigned to a specific child or left unassigned and be
 Assignment type - single can only be picked up or assigned to one child per instance.
 Assignment Type - multi can be picked up or assigned to more than one child per instance - meaning each child can pick up and execute the chore independently.
 
-A chore will need to either have the 'assigned' or 'accepted' field - filled by a child name.
+A chore will need to either have the 'assigned' or 'accepted' field - filled by a child, identified by their nickname.
 An assigned chore does not need to be accepted.
 An unassigned chore is up to be accepted by one or more child (depending on the assignment type).
 
@@ -66,6 +66,8 @@ A chore then goes into a parental verification flow (follows in "Parent Login Op
 
 A parent can set the status of the chore instance per child to Complete, Partially Complete or Incomplete.
 An incomplete task goes back into a child's tasks section for re-submission (see "Child Login Options.txt").
+
+Proof photo deletion: The proof photo exists only to support the parent's validation decision, not as a permanent record. As soon as a parent sets the chore instance's status (Complete, Partially Complete, or Incomplete), the photo file is automatically and permanently deleted from storage - regardless of outcome. Only the outcome itself (status, awarded points, and the reason for non-completion if Incomplete) is retained on the chore instance. If Incomplete, the child can still re-submit with a new photo, which follows the same submit -> validate -> delete cycle. This limits how long any child's photo exists in the system to the minimum needed for review, per the data-minimization approach in "Calm Chore Setup.txt".
 
 
 The chore layout should have a tab for Instances i.e., scheduled occurrences of the chore.

@@ -163,7 +163,6 @@ This request should need to be approved / validated by the parento of the child 
 For instance, the parent of the child being added would see a row in their "Child Progress" tab with an option to Approve or Reject.
 
 Each row in the "My Friends" tab should show the following info:
-- Child Name
 - Nickname
 - Chore Streak
 - Total Completed Chores
@@ -180,7 +179,6 @@ This should allow children to give feedback about features and bugs and this sho
 
 "Setup" tab: Should have a section called My Profile
 Childrens' profile section shows:
-- Child Name (not editable by child)
 - Nickname (editable by the child - validate uniqueness across the app)
 - Selected colour (must be unique within an account) - picked from a curated palette of vibrant accent colours (distinct from the calm green fixed on the parent side). Used to colour the chore calendar and applied app-wide as the child's personal accent theme (e.g. header accents, badges) throughout their own login. Editable at any time from this profile section.
 

@@ -29,13 +29,14 @@ Create account should be an option for a first-time parent session. (this should
 
 Privacy & Data Handling:
 Now that children from different families can connect as friends, this app handles children's personal data beyond a single household, not just a private family tool - this baseline applies regardless of how many families end up using it:
-- Every child profile is created by a parent, not self-registered by the child. This is the app's structural stand-in for parental consent, but it should be paired with an explicit privacy notice / consent acknowledgment shown during parent Create Account, not left implicit.
-- Data collected per actor: parents (First Name, Last Name, Email); children (Child Name, Username, Nickname, accent colour, chore activity, points/streak history, and proof photos submitted for chores).
-- What's visible to an approved friend (a different family): Child Name, Nickname, Chore Streak, Total Completed Chores, Total Points, Tier, and the last 5 completed chore names with date and points. Nothing else.
-- What's never shared outside a child's own family, under any circumstance: proof photos, passcodes, email addresses, notification settings, and full chore/redemption history beyond the last-5 summary above.
-- Friend search works by Nickname only, never by real Child Name, so a child can't be located by someone who isn't already an intended contact (see "My Friends" tab in "Child Login Options.txt").
+- Every child profile is created by a parent, not self-registered by the child. This is the app's structural stand-in for parental consent, paired with the explicit Terms & Conditions and Parental Consent Notice (see "Calm Chore Terms and Conditions.docx") shown and accepted (checkbox + confirmation email) during parent Create Account - see "Create Account" above.
+- Data collected per actor: parents (First Name, Last Name, Email); children (Username, Nickname, accent colour, chore activity, points/streak history, and a proof photo submitted per chore - see deletion rule below). Notably, a child's real/legal name is never collected at all - there is no such field anywhere in the app. Username is a parent-chosen login handle (never shown to other families), and Nickname is the only identifier shown anywhere in the app, including to friends.
+- Proof photo retention: a proof photo is only ever needed to support the parent's one-time validation decision. It is automatically and permanently deleted the moment the parent sets the chore instance's status (Complete, Partially Complete, or Incomplete) - it is never retained afterward, even within the child's own family. Only the outcome (status, awarded points, non-completion reason) is kept. See "Calm Chore Creation.txt" for the instance-level rule.
+- What's visible to an approved friend (a different family): Child Name, Nickname, Chore Streak, Total Completed Chores, Total Points, Tier, and the last 5 completed chore names with date and points. Nothing else - proof photos are never visible to friends even during the brief window before deletion.
+- What's never shared outside a child's own family, under any circumstance: proof photos (which are short-lived, see above), passcodes, email addresses, notification settings, and full chore/redemption history beyond the last-5 summary above.
+- Friend search works by Nickname only - there's no real-name field to search by in the first place, and Username (the login handle) is never searchable or shown to other families - so a child can't be located by someone who isn't already an intended contact (see "My Friends" tab in "Child Login Options.txt").
 - A parent can request deletion of a child's profile and its associated data (photos, points history, chore history). Deletion should also remove that child from any friends' connections on the other side, not leave a dangling reference.
-- Because this may extend to children outside the immediate family, treat it as in scope for children's privacy regulations (e.g. COPPA in the US, and equivalent rules elsewhere) once used beyond a single household - this spec sets the product-level baseline (consent gate, data minimization, no photo sharing outside family, deletion rights), but an actual privacy policy document and legal review are still needed before wider release; this text is not a substitute for that.
+- Because this may extend to children outside the immediate family, treat it as in scope for children's privacy regulations (e.g. COPPA in the US, and equivalent rules elsewhere) once used beyond a single household. A first-draft, COPPA-oriented Terms & Conditions and Parental Consent Notice has been written ("Calm Chore Terms and Conditions.docx", shown/accepted per "Create Account" above) covering the consent gate, data collected, proof-photo deletion, Friends disclosure, parental rights, and retention - but it is explicitly marked as needing licensed-attorney review before real users see it, and is not a substitute for that review.
 
 Add to Home Screen Prompt:
 The first time the app is opened in a browser on a given device, by any actor (a parent, an additional parent, or a child logging in directly - not applicable to a Parent-Managed child, who has no login of their own), and the app is not already installed to that device's home screen, show a prompt encouraging the user to add the app icon to their home screen.
@@ -48,6 +49,7 @@ This is in addition to, not instead of, the step-by-step "how to add the app ico
 
 Create Account:
 Create account should allow entry of First Name, Last Name and Email.
+Before the account can be created, the parent must be shown the Terms & Conditions and Parental Consent Notice (see "Calm Chore Terms and Conditions.docx" in the same folder) and check a box confirming they are the parent/legal guardian, have read the notice, and consent to the data practices it describes. The "Create Account" button stays disabled until this box is checked. On submission, a confirmation email is sent to the address entered, containing a copy of the notice and instructions for revoking consent later - this is the required second confirmation step for COPPA verifiable parental consent, alongside the in-app checkbox. The notice's version number and the date/time of acceptance are stored against the parent's account. If the notice is later updated in a way that changes what's collected, used, or shared (a material change), the parent must re-accept the current version before the account can continue being used - a minor wording clarification does not require re-acceptance.
 This should also have an option to "Add Profiles"
 Profiles could be for additional parents or for children.
 
@@ -57,11 +59,10 @@ Each parent added should have the following information captured:
 - First Name, Last Name, Email.
 
 The children profile definition should allow the following information:
-- Child Name
 - Parent-Managed (Y/N) - for a child too young to have their own device / login. When set to Yes, a Username and Passcode are not required for that child, and the parent instead tracks that child's chores from their own login (see "Manage for [Child]" tab in "Parent Login Options.txt"). Can be switched off later once the child is ready for their own login - existing points, streak and tier history carry over unchanged.
-- UserName (manually entered by the parent, app-wide duplicate validation to be done) - not required if Parent-Managed is Yes
+- UserName (manually entered by the parent, app-wide duplicate validation to be done) - not required if Parent-Managed is Yes. This is a login handle only, chosen freely by the parent - the app has no separate real-name field, so nothing requires this to be the child's actual/legal name (a parent is free to use one if they want, but it isn't asked for or needed).
 - Passcode (6 digit numeric) - not required if Parent-Managed is Yes
-- Nickname (to be filled in by the child - to be done on first login and can be modified at any time). For a Parent-Managed child, the parent fills this in instead, and can update it later.
+- Nickname (to be filled in by the child - to be done on first login and can be modified at any time). For a Parent-Managed child, the parent fills this in instead, and can update it later. The nickname is the only identifier shown anywhere in the app once set - on the calendar, in chore lists, to friends, everywhere. Until a child's first login, parent-facing lists (Setup --> Profiles, Child Progress, Validate Chores) show the Username in its place as a placeholder label.
 - Selected colour (must be unique within an account) - picked by the child from a curated palette of vibrant accent colours (distinct from the calm green used on the parent side). Suggested on first login alongside the nickname, and can be updated by the child at any time from their profile. Used to colour the chore calendar and applied app-wide as the child's personal accent theme (e.g. header accents, badges) throughout their own login. For a Parent-Managed child, the parent picks this instead.
 
 On each further login, the parent sees a Setup menu option (through the "Setup" word or a gear or spanner icon).
@@ -73,7 +74,6 @@ Setup --> Profiles:
 - Section to show childrens' profiles current under the account
 
 Childrens' profile section shows:
-- Child Name
 - Username
 - Nickname
 - Reset passcode option (per child)
@@ -106,7 +106,6 @@ For children, only the In-app option exists.
 Child Login Setup:
 When a child logs in, they also see the Setup option under which they can see profiles.
 Their profile should show:
-- Child Name
 - Nickname (editable)
 - Colour (editable - picked from the curated accent palette)
 
