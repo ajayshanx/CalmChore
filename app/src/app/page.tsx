@@ -1,9 +1,18 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-10 px-6 text-center">
       <div>
+        <Image
+          src="/logo.png"
+          alt="Calm Chore"
+          width={112}
+          height={112}
+          priority
+          className="mx-auto mb-4"
+        />
         <h1 className="text-4xl font-semibold text-calm-green">Calm Chore</h1>
         <p className="mt-2 max-w-sm text-calm-text/80">
           A calm, gamified way for your family to manage chores together.
