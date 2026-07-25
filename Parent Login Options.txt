@@ -30,9 +30,13 @@ The All Chores / Inactive Chores tab should have the following info about the ch
 
 The Chore Ideas tab should show just the Chore Name and a preview of Info.
 
-The Chore Ideas tab ships pre-seeded with a starter set of common chores grouped by age band, so parents have somewhere to start before the library has been built up by real contributions from other families. Each seeded idea also carries a Suggested Age Group tag (2-3, 4-6, 7-11, 12+), so the tab can be browsed / filtered by age group as well as alphabetically. Each seeded idea includes a rough "feels like" time estimate, mapped to a suggested points value using the same logic as the Points suggestion in Chore Creation (points = ceil(minutes / 10), minimum 1 point) - shown as a preview next to the chore, and pre-filled into Points if a parent adds it as a chore for their own family (still fully editable, exactly as with any other chore).
+The Chore Ideas tab has two sections:
 
-Starter Chore Ideas (age group: chore ~ time estimate -> suggested points):
+1) Example Chores - a fixed, always-visible starter set of common chores grouped by age band, so parents have somewhere to start before the library has been built up by real contributions from other families. These are curated reference content, not user-submitted, so they aren't affected by the "real chore" filter or Likes described below. Each carries a Suggested Age Group tag (2-3, 4-6, 7-11, 12+), so this section can be browsed / filtered by age group as well as alphabetically. Each includes a rough "feels like" time estimate, mapped to a suggested points value using the same logic as the Points suggestion in Chore Creation (points = ceil(minutes / 10), minimum 1 point) - shown as a preview next to the chore, and pre-filled into Points if a parent adds it as a chore for their own family (still fully editable, exactly as with any other chore).
+
+2) Chore Ideas from other families - chores other parents have created, shown separately below Example Chores. To keep this list meaningful rather than cluttered with fake or test entries, a chore only qualifies to appear here once it has at least one schedule / instance ever created against it (i.e. someone actually used it, not just typed a name and abandoned it). Parents can "Like" a chore idea they find useful (a simple toggle, no comment or reason needed). By default this section shows only the Most Popular chore ideas (ranked by like count), with a "View All" toggle to switch to the full unfiltered, alphabetized list of everything that meets the schedule-based qualifying bar. Liking requires being logged in as a parent; a parent can unlike at any time.
+
+Example Chores (age group: chore ~ time estimate -> suggested points):
 2-3 Years:
 - Pick up toys and books (~5 min -> 1 pt)
 - Put trash in garbage can (~2 min -> 1 pt)
@@ -116,6 +120,8 @@ The 'Child Progress' for the logged-in parent should show the information simila
 
 The above should list per child, labeled by the child's Nickname (or Username, as a placeholder, before that child's first login and nickname selection).
 Clicking on the child row should show more details such as List of Friends (Nickname), Last 10 completed chores (Chore Name), Ongoing chores (Chore name) etc.
+
+If another family has requested to add this child as a friend, that request appears here too (e.g. as a distinct row or a badge on the child's row) with Approve / Reject buttons, per the flow described in "My Friends" in "Child Login Options.txt" - this is the "parent of the child being added" step that request depends on. Rejecting doesn't require a reason; approving activates the friend connection on both sides immediately.
 
 "Validate Chores and Freezes" tab:
 The tab shuld have 2 sections for Chores and then for Freeze requests.

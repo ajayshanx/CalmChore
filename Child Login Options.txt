@@ -156,9 +156,9 @@ This goes into a 'Requested Redemption' grid that shows the following info:
 This tab should have all friends that the logged in child has added to their profile.
 Friends could be added by doing the following:
 
-Use the "Search" option to search for a child by their Nickname (Nickname only, not Child Name - this keeps a child's real name from being searchable by someone who isn't already an approved contact; Nickname is the intentional public handle for this).
+Use the "Search" option to search for a child by their Nickname (Nickname only - there's no real name in the system to search by in the first place; Nickname is the intentional public handle for this).
 When a profile comes up, the child can select an "Add Friend" button option.
-This request should need to be approved / validated by the parento of the child being added. Until approved, the requesting child should see a 'Pending' status for the friend addition request.
+This request should need to be approved / validated by the parent of the child being added. Until approved, the requesting child should see a 'Pending' status for the friend addition request.
 
 For instance, the parent of the child being added would see a row in their "Child Progress" tab with an option to Approve or Reject.
 

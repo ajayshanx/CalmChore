@@ -32,11 +32,14 @@ Now that children from different families can connect as friends, this app handl
 - Every child profile is created by a parent, not self-registered by the child. This is the app's structural stand-in for parental consent, paired with the explicit Terms & Conditions and Parental Consent Notice (see "Calm Chore Terms and Conditions.docx") shown and accepted (checkbox + confirmation email) during parent Create Account - see "Create Account" above.
 - Data collected per actor: parents (First Name, Last Name, Email); children (Username, Nickname, accent colour, chore activity, points/streak history, and a proof photo submitted per chore - see deletion rule below). Notably, a child's real/legal name is never collected at all - there is no such field anywhere in the app. Username is a parent-chosen login handle (never shown to other families), and Nickname is the only identifier shown anywhere in the app, including to friends.
 - Proof photo retention: a proof photo is only ever needed to support the parent's one-time validation decision. It is automatically and permanently deleted the moment the parent sets the chore instance's status (Complete, Partially Complete, or Incomplete) - it is never retained afterward, even within the child's own family. Only the outcome (status, awarded points, non-completion reason) is kept. See "Calm Chore Creation.txt" for the instance-level rule.
-- What's visible to an approved friend (a different family): Child Name, Nickname, Chore Streak, Total Completed Chores, Total Points, Tier, and the last 5 completed chore names with date and points. Nothing else - proof photos are never visible to friends even during the brief window before deletion.
+- What's visible to an approved friend (a different family): Nickname, Chore Streak, Total Completed Chores, Total Points, Tier, and the last 5 completed chore names with date and points. Nothing else - proof photos are never visible to friends even during the brief window before deletion.
 - What's never shared outside a child's own family, under any circumstance: proof photos (which are short-lived, see above), passcodes, email addresses, notification settings, and full chore/redemption history beyond the last-5 summary above.
 - Friend search works by Nickname only - there's no real-name field to search by in the first place, and Username (the login handle) is never searchable or shown to other families - so a child can't be located by someone who isn't already an intended contact (see "My Friends" tab in "Child Login Options.txt").
 - A parent can request deletion of a child's profile and its associated data (photos, points history, chore history). Deletion should also remove that child from any friends' connections on the other side, not leave a dangling reference.
 - Because this may extend to children outside the immediate family, treat it as in scope for children's privacy regulations (e.g. COPPA in the US, and equivalent rules elsewhere) once used beyond a single household. A first-draft, COPPA-oriented Terms & Conditions and Parental Consent Notice has been written ("Calm Chore Terms and Conditions.docx", shown/accepted per "Create Account" above) covering the consent gate, data collected, proof-photo deletion, Friends disclosure, parental rights, and retention - but it is explicitly marked as needing licensed-attorney review before real users see it, and is not a substitute for that review.
+
+Timezone:
+Streaks, Chore Freezes, the Weekly Streak Bonus, and daily/weekly boundaries generally are all defined in terms of "a day" or "a calendar week" - these need a single, unambiguous timezone per family to mean anything (e.g. is 11pm on the East Coast still "today" for a family that just moved to the West Coast, or for grandparents managing a grandchild's account from another country?). Use the timezone captured from the device at parent Create Account as that family's timezone of record for all children under the account, editable later from Setup --> Profiles if a family relocates. All "day" and "week" boundaries (freeze auto-apply, streak counting, Weekly Streak Bonus calculation) are evaluated in that stored timezone, not the server's or an individual device's current timezone, so behavior stays consistent even if a child logs in from a different timezone while traveling.
 
 Add to Home Screen Prompt:
 The first time the app is opened in a browser on a given device, by any actor (a parent, an additional parent, or a child logging in directly - not applicable to a Parent-Managed child, who has no login of their own), and the app is not already installed to that device's home screen, show a prompt encouraging the user to add the app icon to their home screen.
@@ -49,7 +52,7 @@ This is in addition to, not instead of, the step-by-step "how to add the app ico
 
 Create Account:
 Create account should allow entry of First Name, Last Name and Email.
-Before the account can be created, the parent must be shown the Terms & Conditions and Parental Consent Notice (see "Calm Chore Terms and Conditions.docx" in the same folder) and check a box confirming they are the parent/legal guardian, have read the notice, and consent to the data practices it describes. The "Create Account" button stays disabled until this box is checked. On submission, a confirmation email is sent to the address entered, containing a copy of the notice and instructions for revoking consent later - this is the required second confirmation step for COPPA verifiable parental consent, alongside the in-app checkbox. The notice's version number and the date/time of acceptance are stored against the parent's account. If the notice is later updated in a way that changes what's collected, used, or shared (a material change), the parent must re-accept the current version before the account can continue being used - a minor wording clarification does not require re-acceptance.
+Before the account can be created, the parent must be shown the Terms & Conditions and Parental Consent Notice (see "Calm Chore Terms and Conditions.docx" in the same folder) and check a box confirming they are the parent/legal guardian, have read the notice, and consent to the data practices it describes. The "Create Account" button stays disabled until this box is checked - this single in-app acceptance, tied to the parent's own account, is the consent record; no separate confirmation email is sent. The notice's version number and the date/time of this first acceptance are stored against the parent's account (this "earliest accepted" timestamp is what's shown later in Setup --> Privacy Policy, and doesn't change on later re-reads). If the notice is later updated in a way that changes what's collected, used, or shared (a material change), the parent must re-accept the current version before the account can continue being used, which additionally records that version's acceptance date - a minor wording clarification does not require re-acceptance.
 This should also have an option to "Add Profiles"
 Profiles could be for additional parents or for children.
 
@@ -57,6 +60,7 @@ Additional Parent profile:
 The additional parent profile addition should allow the addition of further parents who can login and administer the same set of children.
 Each parent added should have the following information captured:
 - First Name, Last Name, Email.
+Adding a parent sends an invite email with a link to set their own password (they are never given or told the first parent's password, and the first parent doesn't set one on their behalf). On first login, before reaching anything else, the invited parent is shown the same Terms & Conditions and Parental Consent Notice as the original Create Account flow and must accept it the same way (checkbox) - each parent with access to a child's data needs to have consented individually, not just the parent who happened to create the account. Until the invite is accepted, that parent shows as "Invited" (not yet active) in Setup --> Profiles.
 
 The children profile definition should allow the following information:
 - Parent-Managed (Y/N) - for a child too young to have their own device / login. When set to Yes, a Username and Passcode are not required for that child, and the parent instead tracks that child's chores from their own login (see "Manage for [Child]" tab in "Parent Login Options.txt"). Can be switched off later once the child is ready for their own login - existing points, streak and tier history carry over unchanged.
@@ -76,7 +80,7 @@ Setup --> Profiles:
 Childrens' profile section shows:
 - Username
 - Nickname
-- Reset passcode option (per child)
+- Reset passcode option (per child) - the parent directly enters and saves a new 6-digit passcode; no need to enter or confirm the previous one, and no check that it differs from the old one
 
 Setup --> Notifications:
 This section should have a series of in-app actions and a section where admins (parents) can choose how notifications should be received for those actions separately for parents and children.
@@ -97,14 +101,14 @@ Actions:
 
 Notification options: (checkboxes)
 - In-app
-- Email
+- Email (requires a single outbound sending address/service set up for the app, e.g. notifications@[domain] via a transactional email provider such as Resend or SendGrid - see build notes for provider choice)
 
 The above can be selected separately for the current logged in user and for all children on the account.
 For children, only the In-app option exists.
 
 Setup --> Privacy Policy:
 This shows the full Terms & Conditions and Parental Consent Notice (see "Calm Chore Terms and Conditions.docx") in a plain, readable in-app view - not just at Create Account, but permanently accessible any time a parent wants to check it, since this is reasonably something a parent may want to revisit rather than only see once during signup.
-- At the top, show which version the parent accepted and when (e.g. "You accepted v1.0 on 25 July 2026"), and clearly flag if a newer version exists that they haven't accepted yet.
+- At the top, show the earliest date/time this parent accepted the notice (e.g. "You first accepted this on 25 July 2026"), which stays fixed even if they've since re-accepted a newer version after a material change - and clearly flag if a newer version exists that they haven't accepted yet.
 - Ahead of the full text, call out the two things parents are most likely to want reassurance on, in plain language and without needing to read the whole notice: (1) proof photos are automatically and permanently deleted the moment a parent reviews and rates a chore submission - never stored long-term or shown to anyone else; and (2) Calm Chore never asks for or stores a child's real/legal name - only a parent-chosen username (login only) and a child-chosen nickname (the only identifier shown anywhere in the app, including to friends).
 - The full notice text follows below that summary, unchanged from what was accepted at Create Account (see "Create Account" above).
 This tab is read-only information - re-acceptance, when needed after a material change, happens through the acceptance prompt described under "Create Account", not from this Setup screen.
