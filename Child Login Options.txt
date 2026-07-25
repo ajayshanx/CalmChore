@@ -1,0 +1,190 @@
+When a child logs in, they should have the following menu options:
+
+"Chore Calendar" tab:
+All created chores should show up in a chore calendar based on the chore, the chore instances and their schedules.
+Unassigned chores should be indicated in a neutral colour on a chore calendar and assigned or accepted chores should show in the colour of the child to which the chore is accepted or assigned.
+The colour is applied to the schedule instance on the chore calendar.
+The colour is based on the selected colour in the profiles by the parent for the child, or by the child.
+Clicking or tapping on the chore in the calendar opens a Chore popup with info from the chore and chore instance. 
+
+The following info should show on the Chore Popup:
+- Chore Name
+- Info
+- Schedule (Date & time)
+- Deadline
+- Assigned To
+- Accepted By
+- Points
+
+A chore that can be accepted by the child should have an "Accept" button in the popup.
+
+
+"My Chores" tab:
+This tab / menu option should hold a list of all chores that are either assigned to or accepted by the current child.
+Within this, there should be sub tabs for Completed Chores and Ongoing Chores.
+This list should show the following info about each chore:
+
+Chore Name
+Schedule
+Deadline
+Points 
+Status
+Awarded Points 
+
+Clicking on each chore should show the detailed chore info with all the above as well as info captured from the Chore creation.
+- Chore Name
+- Info (description of what is needed)
+- Schedule
+- Deadline
+- Assigned To
+- Accepted By
+- Points
+- Status
+- Proof (if so required)
+- Awarded Points
+
+In the chore popup, there should be a chore instance status timeline, showing what has happened to the chore instance status over time.
+If there is a deadline to the chore, this should be pre-populated on the timeline (in the future if it has not yet passed).
+The popup should also show incomplete tasks - with the parent provided reason for non-completion visible in the popup.
+
+Additionally, the child should be click on a button to submit proof.
+The proof should link to the device camera (but not the photo gallery). It is essential that the photo is submitted live as proof of chore completion and the child cannot submit an older photo as proof of a current or ongoing chore.
+
+There should be a button to 'Submit for Verification'.
+
+Chores in the below statuses should show in the Ongoing chores tab.
+- Unassigned
+- Assigned
+- Accepted
+- Unverified
+- Incomplete
+
+When a child's chore is marked as 'incomplete' by the parent, any existing proof is disassociated from the chore. This chore should appear in the Ongoing Chores tab with a corresponding status. Clicking on the chore should show its details including reason for non-completion. Such a task can be re-submitted after submitting proof, as needed.
+
+Chores showing in the Completed Chores tab should have status of
+- Verified Complete
+- Verified Partially Complete
+
+
+
+"Points" tab:
+
+Should have sub tabs for 'Points' and 'Chore Freezes'.
+The points sub tab for the logged-in child should show the following information:
+- Total Chores Completed
+- Total Ongoing Chores
+- Total Points Awarded
+- Chore Streak (Consecutive days with completed chores)
+- Tier
+- Next Tier (Tier / level Name and how many days away it is)
+
+The tab should have a "Points History" grid, which details credits and debits based on chore activity and redemption, with a plus and minus sign. (look at the "PointActivity" jpg file for ideas.)
+
+
+Tier should be as follows:
+Rook, Warrior, Hero, Champion, Icon, Legend, Master, Sovereign, Titan, Oracle, Avatar, Demigod
+- Rook (0 - 7 days)
+- Warrior (8 - 14 days)
+- Hero (15 - 21 days)
+- Champion (22 - 28 days)
+- Icon (29 - 35 days)
+- Legend (36 - 42 days)
+- Master (43 - 49)
+- Sovereign (50 - 56)
+- Titan (57 - 63)
+- Oracle (64 - 70)
+- Avatar (71 - 77)
+- Demigod (78 - onward)
+More tier names can be defined if children keep up with chore streaks and attain tiers to this extent.
+
+Within each tier of 7 days, have levels at 2-3 days, so that you would be a Rook Level 1 for the first 3 days, and Rook Level 2 for days 4, 5 and Level 3 for days 6, and 7.
+Warrior Level 1 would be days 8 - 10, Warrior Level 2 would be 11-12 and Warrior Level 3 would be 13-14.
+Hero Level 1 would be 15-17, Level 2 would be 18-19, Level 3 would be 20-21.
+Champion Level 1 would be 22-24, Level 2 25-26, Level 3 27-28. The same level split needs to be similarly applied across all tiers.
+Each tier differs based on the colour of the shield depicting the tier and the weapons on the shield. Both the colours get more royal and the weapons more powerful as we move up the tiers.
+Wooden spoon, Fork, Club, Knife, Sword, Axe, Morningstar, Flail, Lance, Spear, Longsword, Warhammer, Falchion could be the weapons for different tiers.
+The levels within each tier are represented by the number of such weapons on the shield.
+
+Weekly Streak Bonus:
+The bonus is tied to the calendar week (Mon-Sun), not to a child's personal streak-day count (which is why tier day-ranges and this bonus's week boundary won't always line up - that's expected). A week counts as "complete" when every day that was required for that child has at least one completed chore, an auto-applied Chore Freeze, an approved Chore Freeze request, or a Chore Break covering it - no gaps. A day is only "required" from the point the child's account / streak became active - a child who starts mid-week (e.g. first login on a Thursday) only needs Thursday through Sunday covered for that first week to count, not the days before they had an account.
+Every time a child completes a full week this way without the streak breaking, they earn a one-time Weekly Streak Bonus: 10% of that week's total earned points, rounded to the nearest point, with a minimum of 1 point if the week had any points at all. This is posted as its own credit in Points History (e.g. "+3 Weekly Streak Bonus"), separate from individual chore points, so the points a parent set per chore are never altered - only this bonus line is added on top.
+
+Higher-tier free Chore Freezes:
+The number of automatic, no-request-needed Chore Freezes per week scales with the child's current tier:
+- Rook through Legend: 1 free freeze per week (the 2nd freeze need for that week onward must go through 'Request Multi-day Freeze', requiring parent approval).
+- Master through Demigod: 2 free freezes per week (the 3rd freeze need for that week onward must be requested).
+Which tier's free-freeze count applies is based on the child's tier at the time each freeze would be used, so a child who ranks up mid-week gets the higher count from that point on.
+
+Chore Freeze sub tab:
+Chore Freezes up to the free count for the child's current tier (see above) are automatic - the child does not need to request or apply them. If a day passes with at least one chore assigned to or open for the child that was not completed, and the week's free-freeze count has not yet been used up, the system automatically applies that day's Chore Freeze: the streak is preserved and no chores are counted as missed for that day. A day with no chores assigned to or available for the child at all does not trigger a freeze, since there was nothing to do in the first place.
+A day that falls within an active Chore Break for the child is also not eligible to auto-consume a freeze, since a Chore Break already protects the streak independently.
+When the child next logs in after an automatic freeze was used, a banner should appear (e.g. on Chore Calendar or My Chores) reading something like "Your Chore Freeze was used automatically on [date] since no chores were completed that day." This banner is dismissible once seen.
+
+The free-freeze count (1 or 2, per tier above) is the cap on auto-applied freezes per calendar week (Mon to Sun) - this needs validation. Streak freezes should not carry forward to the next week if unused.
+
+Any freeze need beyond the free count for the week must be requested by the child, via an optional checkbox for 'Request Multi-day Freeze'. This allows the child to select a From and To date and put in a Request Reason, then submit. All such requests require parent approval (Status = Pending). An approved request uses up the streak freeze allowance for each week it spans (see above for the multi-week case). If a week's free freeze(s) have already been used, an approved multi-day request covering that same week does not get additional free freezes for it - the parent reviewing the request can see how many of that week's free freezes have already been auto-consumed.
+
+All chore freezes (automatic or requested) go into a grid on this tab so the child can see what has been used, requested, and/or approved.
+Grid could have columns:
+- Freeze From
+- Freeze To (both would be same date for a single-day freeze)
+- Reason (shows "No chores completed" for an automatic freeze)
+- Status (Auto-Applied / Approved / Pending / Declined)
+A child can cancel a multi-day request if it is still in a Pending status. An automatic freeze cannot be cancelled, since it has already protected a day that has passed.
+
+
+"Redeem Points" tab:
+"Points earned from doing chores may be redeemed for treats during shopping, purchases or simply screen time.
+Discuss this with your parents and ensure that points are redeemed regularly and with consistency. Points are only fun when you use them. Depending on what you want to use your points for, your parent will reduce your points total, with a number of your points being used up by shopping, treats, or screen time."
+This text, or a version of it can appear on this tab on the child's login into the app.
+
+Each redemption option i.e. "Grocery Treats", "Purchases", "Eating Out", "Screen Time", "Cash / Pocket Money", "Other" should be represented by an icon on the screen.
+The child selects an option, puts in what they would like to redeem their points for and clicks a button for "Request Redemption". This request should appear on the parents' "Points Redemption" tab.
+Selecting "Grocery Treats" or "Purchases" or "Other" requires entry of "What would you like?" as a free-text field.
+Selecting "Eating Out" requires entry of "Restaurant / cuisine / what you'd like" as a free-text field.
+Selecting "Screen time" requires selection from a dropdown of time interval; "30min, 45min, 1 hr, 1.5 hrs, 2 hrs, Movie" and a mandatory "Purpose of time" field.
+Selecting "Cash / Pocket Money" requires entry of amount.
+
+This goes into a 'Requested Redemption' grid that shows the following info:
+- Category (Grocery, Purchases, Eating Out, Screen time, Cash / Pocket Money, Other)
+-  Requested for (what they requested i.e., What would you like / Restaurant-cuisine / Screen time interval+Purpose of time / Amount)
+
+'Approved Redemption' go into a second lower grid with the same columns plus an additional column showing Points Used.
+'Rejected Requests' is a third grid showing same columns + rejection reason.
+
+"My Friends" tab:
+This tab should have all friends that the logged in child has added to their profile.
+Friends could be added by doing the following:
+
+Use the "Search" option to search for a child by their Nickname (Nickname only, not Child Name - this keeps a child's real name from being searchable by someone who isn't already an approved contact; Nickname is the intentional public handle for this).
+When a profile comes up, the child can select an "Add Friend" button option.
+This request should need to be approved / validated by the parento of the child being added. Until approved, the requesting child should see a 'Pending' status for the friend addition request.
+
+For instance, the parent of the child being added would see a row in their "Child Progress" tab with an option to Approve or Reject.
+
+Each row in the "My Friends" tab should show the following info:
+- Child Name
+- Nickname
+- Chore Streak
+- Total Completed Chores
+- Total Points
+- Tier
+
+Clicking on the friend should open a popup where they see their friends' last 5 completed chores (Chore Name, date, and points only), along with the above details of the friend. Proof photos are never shown to friends or any other family - they remain visible only to the submitting child and their own parents.
+
+Each row (or the friend's popup) should also have a "Remove Friend" button. Either friend in the connection can remove it at any time - unlike adding a friend, removal does not need approval from the other child or their parent. Clicking Remove should show a confirmation prompt ("Remove [Nickname] as a friend?") with Yes / No. Confirming removes the connection immediately from both children's "My Friends" tab. To reconnect afterwards, a new friend request (as above) would need to be sent and approved again.
+
+
+"Feedback" tab:
+This should allow children to give feedback about features and bugs and this should be visible both in the parents' login and in a feedback table where the feedback and the type of feedback provider can be clearly seen (Child vs. parent)
+
+"Setup" tab: Should have a section called My Profile
+Childrens' profile section shows:
+- Child Name (not editable by child)
+- Nickname (editable by the child - validate uniqueness across the app)
+- Selected colour (must be unique within an account) - picked from a curated palette of vibrant accent colours (distinct from the calm green fixed on the parent side). Used to colour the chore calendar and applied app-wide as the child's personal accent theme (e.g. header accents, badges) throughout their own login. Editable at any time from this profile section.
+
+"About" tab:
+Detail in a simple way, how the child can use the app.
+Ensure the child is also informed or given instructions about how to add the app icon to the home screen.
+Put simple and easy-to-use instructions for the child about how to pick up chores, viewing the calendar and how the tiers and levels work.

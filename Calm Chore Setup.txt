@@ -1,0 +1,116 @@
+All design elements, features, layouts HAVE to be determine and built keeping in mind a responsive, mobile-friendly layout.
+
+Colour Scheme:
+The colour scheme should reflect the name of the app 'Calm Chore'.
+The colours therefore should reflect calm.
+Colour options include: Nature-inspired hues such as greens and warm neutrals are some of the most calming paint colours. Muted greens like Restful Green and warm neutrals such as taupe or off-white are also options. Cool blues and greens are proven focus colours. these are also options. soft blues for reliability, muted greens for a non-threatening and calm environment, and warm whites to clear cognitive overload.
+Choose your ideal motivational color based on your goals:
+Red: Sparks physical energy, competitiveness, and alertness. It's excellent for tackling a workout or a tedious chore, but can be overwhelming in large spaces. 
+Blue: Calms the mind while keeping you mentally sharp. It is the top color choice for productivity, studying, and technical work. 
+Orange: Combines the energy of red and the joy of yellow. It is perfect for brainstorming sessions and boosting enthusiasm. 
+Yellow: Stimulates creativity and confidence. As noted by design experts in Homes & Gardens, a vibrant yellow can uplift your mood and help you feel ready to start the day. 
+Green: Reduces mental fatigue and promotes balance. It's the best color for long-term projects to prevent burnout.
+
+This calm, muted palette applies to the parent experience and is fixed (not selectable). For children, the app instead offers a curated set of more vibrant accent colours to choose from, so each child can make the app feel like their own while the parent experience stays calm and consistent. The core app logos / icons remain the same across both; only the accent colours change.
+
+Child accent colour options (each pairs a soft background tint with a matching accent ring colour, used for header accents, badges and the chore calendar):
+- Blue: background #D2E3F5, accent #9CC0E8
+- Red: background #F5DCDC, accent #E3A6A6
+- Purple: background #E6DCF5, accent #C7A6E3
+- Orange: background #F5E3D2, accent #E3B686
+- Gold: background #F5EFD2, accent #E3D08F
+- Teal: background #D2F0EC, accent #8FD9CC
+A child cannot pick a colour already in use by a sibling on the same account (uniqueness rule as above).
+
+Initial Setup:
+App opening screen should be split as parent login and child login.
+When a parent initially opens the app, they should have a login and password option to login to their account.
+Create account should be an option for a first-time parent session. (this should not exist in the child login section)
+
+Privacy & Data Handling:
+Now that children from different families can connect as friends, this app handles children's personal data beyond a single household, not just a private family tool - this baseline applies regardless of how many families end up using it:
+- Every child profile is created by a parent, not self-registered by the child. This is the app's structural stand-in for parental consent, but it should be paired with an explicit privacy notice / consent acknowledgment shown during parent Create Account, not left implicit.
+- Data collected per actor: parents (First Name, Last Name, Email); children (Child Name, Username, Nickname, accent colour, chore activity, points/streak history, and proof photos submitted for chores).
+- What's visible to an approved friend (a different family): Child Name, Nickname, Chore Streak, Total Completed Chores, Total Points, Tier, and the last 5 completed chore names with date and points. Nothing else.
+- What's never shared outside a child's own family, under any circumstance: proof photos, passcodes, email addresses, notification settings, and full chore/redemption history beyond the last-5 summary above.
+- Friend search works by Nickname only, never by real Child Name, so a child can't be located by someone who isn't already an intended contact (see "My Friends" tab in "Child Login Options.txt").
+- A parent can request deletion of a child's profile and its associated data (photos, points history, chore history). Deletion should also remove that child from any friends' connections on the other side, not leave a dangling reference.
+- Because this may extend to children outside the immediate family, treat it as in scope for children's privacy regulations (e.g. COPPA in the US, and equivalent rules elsewhere) once used beyond a single household - this spec sets the product-level baseline (consent gate, data minimization, no photo sharing outside family, deletion rights), but an actual privacy policy document and legal review are still needed before wider release; this text is not a substitute for that.
+
+Add to Home Screen Prompt:
+The first time the app is opened in a browser on a given device, by any actor (a parent, an additional parent, or a child logging in directly - not applicable to a Parent-Managed child, who has no login of their own), and the app is not already installed to that device's home screen, show a prompt encouraging the user to add the app icon to their home screen.
+- On Android / Chromium-based browsers (Chrome, Edge, Samsung Internet), the prompt includes a real "Add to Home Screen" button that triggers the browser's own install flow directly - effectively a one-tap action (plus the browser's own confirmation step, which cannot be skipped).
+- On iOS Safari, which does not allow an app to trigger installation directly, the prompt instead shows a short visual walkthrough pointing to the Share button and then "Add to Home Screen", since only the user can complete those steps.
+- On desktop browsers, the equivalent install prompt is shown where supported (e.g. Chrome, Edge); this is a secondary case for the app.
+The prompt should be dismissible ("Not now") without blocking use of the app. It should not reappear once the app is installed, but can reappear on a later login if the app still isn't installed on that device, rather than being a permanent one-time-only miss.
+This is in addition to, not instead of, the step-by-step "how to add the app icon to your home screen" instructions already covered in the About section for each login type.
+
+
+Create Account:
+Create account should allow entry of First Name, Last Name and Email.
+This should also have an option to "Add Profiles"
+Profiles could be for additional parents or for children.
+
+Additional Parent profile:
+The additional parent profile addition should allow the addition of further parents who can login and administer the same set of children.
+Each parent added should have the following information captured:
+- First Name, Last Name, Email.
+
+The children profile definition should allow the following information:
+- Child Name
+- Parent-Managed (Y/N) - for a child too young to have their own device / login. When set to Yes, a Username and Passcode are not required for that child, and the parent instead tracks that child's chores from their own login (see "Manage for [Child]" tab in "Parent Login Options.txt"). Can be switched off later once the child is ready for their own login - existing points, streak and tier history carry over unchanged.
+- UserName (manually entered by the parent, app-wide duplicate validation to be done) - not required if Parent-Managed is Yes
+- Passcode (6 digit numeric) - not required if Parent-Managed is Yes
+- Nickname (to be filled in by the child - to be done on first login and can be modified at any time). For a Parent-Managed child, the parent fills this in instead, and can update it later.
+- Selected colour (must be unique within an account) - picked by the child from a curated palette of vibrant accent colours (distinct from the calm green used on the parent side). Suggested on first login alongside the nickname, and can be updated by the child at any time from their profile. Used to colour the chore calendar and applied app-wide as the child's personal accent theme (e.g. header accents, badges) throughout their own login. For a Parent-Managed child, the parent picks this instead.
+
+On each further login, the parent sees a Setup menu option (through the "Setup" word or a gear or spanner icon).
+Under the setup, the parents see Profiles and Notifications.
+
+Setup --> Profiles:
+- Current logged-in parents' account details
+- Any other parents names (but no ability to alter or modify their account) that administer the same children
+- Section to show childrens' profiles current under the account
+
+Childrens' profile section shows:
+- Child Name
+- Username
+- Nickname
+- Reset passcode option (per child)
+
+Setup --> Notifications:
+This section should have a series of in-app actions and a section where admins (parents) can choose how notifications should be received for those actions separately for parents and children.
+
+Actions:
+- Parent addition
+- Child addition
+- Chore addition
+- Chore assignment
+- Chore value additions / updates
+- Chore deadline addition / update
+- Chore acceptance
+- Chore completion
+- Chore assessment
+- Point awarding
+- Point redemption
+- Friend addition
+
+Notification options: (checkboxes)
+- In-app
+- Email
+
+The above can be selected separately for the current logged in user and for all children on the account.
+For children, only the In-app option exists.
+
+
+Child Login Setup:
+When a child logs in, they also see the Setup option under which they can see profiles.
+Their profile should show:
+- Child Name
+- Nickname (editable)
+- Colour (editable - picked from the curated accent palette)
+
+Tier of the child (shown in their profile) is based on the continuous number of days where they complete chores. (Refer to the "Child Login Options.txt" file for tier calculation information).
+
+
+

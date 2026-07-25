@@ -1,0 +1,201 @@
+When a child logs in, they should have the following menu options:
+
+"Chores" tab:
+There should be multiple sub tab within this tab.
+These tabs could be "Active Chores", "Ongoing Chores", "Iactive Chores", "All Chores", "Chore Ideas"
+- Active Chores would list all created chores that have a current or future schedule, whether assigned, accepted or unassigned to one or more of the parents's children
+- Ongoing Chores would list all created chores accepted or assigned by one or more children of the logged-in parent
+- InactiveChores should list all created chores that have a status of 'Inactive'
+- All Chores should list all created chores by this or other parents of this account
+- Chore Ideas should list all chores created by all creators using the app
+Note that given that there could be hundreds of chores, we need a alphabetized grouping, where clicking on A lists all chores starting with A and so on.
+If the same alphabet has more than say 10-20 tasks (as fits a mobile screen), then we must implement pagination.
+There should also be a search textbox that searches across all alphabets based on chore name.
+
+Chores that list across the Active / Ongoing tabs should have the following info about each chore:
+- Chore Name
+- Schedule (Date / Time)
+- Deadline
+- Points
+- Assigned To
+- Accepted By
+- Status
+Note: that information that shows should be related to the current instance of the chore (if not verified complete or partially complete) OR the next instance of the chore.
+
+The All Chores / Inactive Chores tab should have the following info about the chores: (basic chore info and not instance info shows)
+- Chore Name
+- Info preview
+- Current / Next Instance (Date / Time)
+- Previous Instance (Date / Time)
+
+The Chore Ideas tab should show just the Chore Name and a preview of Info.
+
+The Chore Ideas tab ships pre-seeded with a starter set of common chores grouped by age band, so parents have somewhere to start before the library has been built up by real contributions from other families. Each seeded idea also carries a Suggested Age Group tag (2-3, 4-6, 7-11, 12+), so the tab can be browsed / filtered by age group as well as alphabetically. Each seeded idea includes a rough "feels like" time estimate, mapped to a suggested points value using the same logic as the Points suggestion in Chore Creation (points = ceil(minutes / 10), minimum 1 point) - shown as a preview next to the chore, and pre-filled into Points if a parent adds it as a chore for their own family (still fully editable, exactly as with any other chore).
+
+Starter Chore Ideas (age group: chore ~ time estimate -> suggested points):
+2-3 Years:
+- Pick up toys and books (~5 min -> 1 pt)
+- Put trash in garbage can (~2 min -> 1 pt)
+- Put laundry in hamper (~3 min -> 1 pt)
+- Dust (~10 min -> 1 pt)
+- Put away silverware (~5 min -> 1 pt)
+- Wipe baseboards (~10 min -> 1 pt)
+- Fold rags and dishcloths (~5 min -> 1 pt)
+- Put clothes in hamper (~3 min -> 1 pt)
+- Put clothes away in drawers (~5 min -> 1 pt)
+
+4-6 Years (in addition to all 2-3 Years chores):
+- Take care of pets (~10 min -> 1 pt)
+- Set and clear the table (~10 min -> 1 pt)
+- Match socks (~10 min -> 1 pt)
+- Putting away groceries (~10 min -> 1 pt)
+- Make bed (~5 min -> 1 pt)
+- Wipe down dirty walls (~10 min -> 1 pt)
+- Empty trash (~5 min -> 1 pt)
+- Sweep with small broom (~10 min -> 1 pt)
+
+7-11 Years (in addition to all previous):
+- Fold laundry (~20 min -> 2 pt)
+- Sweep (~15 min -> 2 pt)
+- Vacuuming (~15 min -> 2 pt)
+- Take out trash (~5 min -> 1 pt)
+- Wash mirrors (~10 min -> 1 pt)
+- Meal prep (~20 min -> 2 pt)
+- Take trashcan to curb (~5 min -> 1 pt)
+- Weed flowers / garden (~25 min -> 3 pt)
+- Clean out the car (~20 min -> 2 pt)
+- Clean toilets (~15 min -> 2 pt)
+- Clean room (~20 min -> 2 pt)
+- Organize toy room (~20 min -> 2 pt)
+- Bring in mail / newspaper (~2 min -> 1 pt)
+
+12+ Years (in addition to all previous):
+- Mow lawn (~40 min -> 4 pt)
+- Babysit siblings (duration varies - points scale with the time given at chore-instance level)
+- Wash windows (~25 min -> 3 pt)
+- Iron (~20 min -> 2 pt)
+- Wash car (~30 min -> 3 pt)
+- Cook simple meals (~30 min -> 3 pt)
+- Laundry - wash, dry & fold (~30 min -> 3 pt)
+- Mop floors (~20 min -> 2 pt)
+- Clean bathroom (~25 min -> 3 pt)
+- Clean out fridge (~25 min -> 3 pt)
+
+These are starting suggestions only, intended to give parents somewhere to begin - every field (name, info, age group, time estimate, points) can be edited for their own family when adding any of these as an actual chore.
+
+Clicking on any one chore should show a popup with detailed information about the chore with a button to add a chore instance.
+The chore tab itself should have an "Create Chore" button.
+The chore lists should have select checkboxes and selecting one or more chores should enable an "Add Chore Instance" button.
+(Refer to the "Calm Chore Creation.txt" file in the same folder for logic and rules related to chore and instance creation).
+
+"Chore Calendar" tab:
+All created chores should show up in a chore calendar based on the chore, the chore instances and their schedules.
+Unassigned chores should be indicated in a neutral colour on a chore calendar and assigned or accepted chores should show in the colour of the child to which the chore is accepted or assigned.
+The colour is applied to the schedule instance on the chore calendar.
+The colour is based on the selected colour in the profiles by the parent for the child, or by the child.
+Clicking or tapping on the chore in the calendar opens a Chore popup with info from the chore and chore instance. 
+
+The following info should show on the Chore Popup:
+- Chore Name
+- Info
+- Schedule (Date & time)
+- Deadline
+- Assigned To
+- Accepted By
+- Points
+The parent can update the Assigned To field from the calendar for the chore instance as well as update the chore / chore info and instance schedule.
+
+"Child Progress" tab:
+The 'Child Progress' for the logged-in parent should show the information similar to the points tab for the child:
+- Total Chores Completed
+- Total Ongoing Chores
+- Total Points Awarded
+- Current Streak (Consecutive days with completed chores)
+- Tier
+- Friends
+
+The above should list per child.
+Clicking on the child row should show more details such as List of Friends (Child Name), Last 10 completed chores (Chore Name), Ongoing chores (Chore name) etc.
+
+"Validate Chores and Freezes" tab:
+The tab shuld have 2 sections for Chores and then for Freeze requests.
+Chores section:
+- This should have a list of all chores submitted by their children for validation.
+- These should be all chores in an unverified status and should show information about the chore requiring verification
+- Info in the list could be:
+-- Chore Name
+-- Child Name
+-- Submitted On (Date / time)
+-- Deadline (Date / Time)
+-- Points
+-- Proof
+
+Clicking on the row should expand the info as a popup with the same details and the proof photo visible as a preview.
+The popup should also have 3 buttons in place of wordy text buttons: a custom face icon (drawn in the app's own line-art style, matching the mask figure and badges elsewhere) paired with a short always-visible label - happy face + "Completed", neutral face + "Partially Complete", sad face + "Incomplete". As the app is mobile-first, labels are always shown next to the icon rather than relying on hover.
+Clicking these should change the status of the chore instance to Verified - Complete, Verified - Partially Complete , Incomplete.
+Partially Complete should require input of "Awarded Points" i.e. of the total points, how many are awarded (defaulting to the points field for the chore).
+Incomplete should require entry of reason for non-completion which should then be made visible to the child on their "My Chores" tab.
+
+Freeze Requests:
+- Requested By
+- Freeze From
+- Freeze To
+- Reason
+- Status
+Option to Approve or Decline.
+Decline requires a reason.
+
+
+
+
+
+"Points Redemption" tab:
+"Your child has been informed that Points earned from doing chores may be redeemed for treats during shopping, purchases, or simply screen time.
+They have been asked to discuss this with you and ensure that points are redeemed regularly and with consistency. Points are only fun when they are used. Depending on what you child wants to use their points for, you will need to reduce / debit from their points total, with a number of points reduced being agreed upon by both of you based on the purpose of usage and the amount you spend."
+This text, or a version of it can appear on this tab on the parent's login into the app.
+
+This goes into a 'Requested Redemption' grid that shows redemption requests coming from the parent's children:
+- Category (Grocery, Purchases, Eating Out, Screen time, Cash / Pocket Money, Other)
+- Requested for (what they requested i.e., What would you like / Restaurant-cuisine / Screen time interval+Purpose of time / Amount)
+
+This should have 2 buttons for the request: Approve / Reject.
+Reject should require a Rejection reason and not debit any points.
+Approve should approve the request and require entry of number of points to debit. When typing in points, the parents should also be able to see current point total of the child.
+Doing so should debit the specified number of points from the points total of the child. They should not be allowed to debit more points than the child has and it may be a good idea for confirmation before debit to prevent mistaken debiting of wrong points.
+
+Similar to the child's redemption feature, there needs to be multiple grids to show requests pending approval and those alreay approved / rejected.
+
+"Chore Breaks" tab:
+Parents can apply a break for chores by selecting a start and end date (>= start date validation) and selecting one or more or all of the children to who the break applies.
+Depending on how it is applied, the Chore break should appear on the calendar of the affected child(ren).
+Any existing choe instances for that period overlapping the break should get hidden cancelled. If the chore break itself is cancelled, then the instances need to restore and so it is probably necessary to have the instance status and any chore break status affect each other.
+For the duration of the chore break, the child does not need to submit / perform any chores and the existing chore streak is "frozen" and remains in place untilthe next day without a chore break, when a chore can again be done. 
+If the break is applied to a day for which a Chore Freeze was already used - whether auto-applied or an approved request - then the break overrides it and that freeze is restored to the child's weekly free-freeze count for it to be used again on a different day.
+
+
+"Manage for [Child]" tab:
+This tab only appears if the parent has at least one child profile set to Parent-Managed (see "Calm Chore Setup.txt"). It lets a parent track and operate chores on behalf of a child too young to have their own device / login.
+
+If more than one child on the account is Parent-Managed, the tab starts with a child selector (e.g. a dropdown or a row of the children's profile pictures / initials in their accent colour) so the parent can switch between which managed child they are acting on behalf of. The rest of the tab reflects whichever child is currently selected.
+
+For the selected child, this tab mirrors the child login experience, but collapsed into parent-friendly single-step actions:
+- Chore Calendar and chore list, same as the child would see, showing chores assigned to or open for that child.
+- A "Mark Done" button per chore (in place of the child's Accept -> perform -> Submit for Verification flow). Tapping this still requires a live photo (from the parent's device) if the chore requires proof, and immediately asks the parent to rate the outcome using the same face-icon buttons used in Validate Chores (Completed / Partially Complete / Incomplete). There is no separate validation step, since the same parent would otherwise be both submitting and validating - points are credited and the streak updates immediately.
+- Points, streak and tier are shown the same way as on the child's own Points tab, since the child cannot see this themselves.
+- The parent can apply a Chore Freeze directly on the child's behalf (in place of the child requesting one), subject to the same free-freeze-per-week count that applies based on the child's current tier (see "Child Login Options.txt").
+- Points redemption is a direct "Adjust Points" action the parent performs when they give the child a reward, rather than a request-then-approve flow, since there is no child-side request to respond to.
+- Friends / leaderboard are not available for a Parent-Managed child in this version, since that assumes independent interaction the child isn't yet doing.
+
+"Setup" tab:
+This is detailed in the "Calm Chore Setup.txt"
+
+"About" tab:
+How to sections here:
+'About the app': talk about the purpose of the app in simple terms.
+Ensure that the following phrase gets a mention somewhere... "The Calm Chore name is also a play on words, coming from the transliteration of the Hindi phrase for slacker."
+Ensure the parent is also informed or given instructions about how to add the app icon to the home screen.
+
+'How to use':
+Detail in a simple way, how the parent can use the app.
+essential that the parent is taught how to create an icon that links to the app.
+Put simple and easy-to-use instructions for the parent about adding child profiles, adding other parents, creating chore and instances, updsting these, the chore calendar and about point earning and redemption.
