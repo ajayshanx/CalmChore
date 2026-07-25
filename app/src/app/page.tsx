@@ -8,9 +8,10 @@ export default function Home() {
         <Image
           src="/logo.png"
           alt="Calm Chore"
-          width={112}
-          height={112}
+          width={160}
+          height={160}
           priority
+          unoptimized
           className="mx-auto mb-4"
         />
         <h1 className="text-4xl font-semibold text-calm-green">Calm Chore</h1>
