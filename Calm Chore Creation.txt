@@ -1,0 +1,76 @@
+Chore Creation:
+
+Parents can create chores giving the following information:
+
+- Chore Name
+- Info (description of what is needed)
+- Recurring (Yes / No)
+- Assignment Type (single / multi)
+- Assigned To (multi-select)
+- Points (mandatory)
+- Requires Proof (Y/N)
+
+Points suggestion: Before entering Points, the parent is shown a 'Feels like' slider asking about how long the chore feels like it takes (e.g. 5 / 10 / 15 / 20 / 30 / 45 / 60 min). Based on this, the Points field is pre-populated with a suggested value, calculated as points = ceil(minutes / 10), with a minimum of 1 point. This is a suggestion only - the parent can freely override the pre-populated value, and Points remains the mandatory, parent-controlled field. The 'Feels like' estimate is not stored or shown elsewhere; it exists only to seed the suggestion.
+
+When setting a recurring chore, the option should be to select daily, weekly, monthly or 'Set Manually'.
+When recurring, the option should be to end recurrence at a particular date or after a particular number of recurrences.
+The admin / parent also should have the option to create a manual instance of an existing chore selecting all instance level fields (as below).
+A chore that isn't recurring will have a single chore instance, with no option to create a new instance.
+
+At an instance level: (values assigned at Chore level apply to all instances but can be changed at the instance level if needed by the parent)
+- Schedule (Date) & Time (optional) (Note: A recurring chore can have these automatically populated based on the recurrence set)
+- Deadline (Date & time - optional) (Note: A recurring chore can have these automatically populated based on the recurrence set)
+- Assigned To (multi-select) - optional
+- Accepted By (set automatically)
+- Proof (photo) - required based on the Y/N field from the parent chore
+- Points (editable per instance but populates from the parent chore)
+
+Additionally, at a chore execution level, there should be 2 fields:
+- Status (set automatically)
+- Awarded Points (should be <= Points for that instance of the chore)
+The same instance of the chore could be executed by multiple children, each with its own status and points awarded).
+
+
+Status values can be:
+- Inactive
+- Unassigned
+- Assigned
+- Accepted
+- Unverified
+- Incomplete
+- Verified Complete
+- Verified Partially Complete
+
+Wherever Status is shown to a child (e.g. My Chores tab, Chore popup, status timeline), the 3 validation-outcome statuses are represented by a small custom face icon (drawn in the app's own line-art style - black stroke, cream fill, matching the mask figure and badges elsewhere) rather than wordy text, since these are the statuses children most need to read at a glance:
+- Verified Complete: happy / grinning face icon
+- Verified Partially Complete: neutral / flat-mouth face icon
+- Incomplete: sad / frowning face icon
+Given the app is mobile-first and hover doesn't apply on a touchscreen, the short text label (e.g. "Complete", "Partial", "Incomplete") always displays alongside the face icon rather than being hidden behind a hover or tap interaction - the icon and label are shown together as a compact pair. The fuller status text (e.g. "Verified Partially Complete") remains available in the existing chore detail popup. All other statuses (Inactive, Unassigned, Assigned, Accepted, Unverified) continue to display as plain text, as these are in-progress states rather than a rated outcome.
+
+Parents can create a chore and provide information about the chore.
+The chore can be directly assigned to a specific child or left unassigned and be picked up by one or more children.
+Assignment type - single can only be picked up or assigned to one child per instance.
+Assignment Type - multi can be picked up or assigned to more than one child per instance - meaning each child can pick up and execute the chore independently.
+
+A chore will need to either have the 'assigned' or 'accepted' field - filled by a child name.
+An assigned chore does not need to be accepted.
+An unassigned chore is up to be accepted by one or more child (depending on the assignment type).
+
+A default chore instance should have status 'Unassigned' or 'Assigned' (depending on whether it is specifically assigned or not).
+An unassigned chore picked up by a child should have the status 'Accepted'.
+If a chore has been assigned to multiple children each instance repeats per child and has its own status. Instance is therefore also associated with the ID of the child to whom it is assigned or the child that picks it up.
+
+A chore instance should have proof, linked to a photo that can be taken by the child. Once the child believes that a chore has been completed, they can take a photo and "Submit" the chore for verification. Such a chore would be 'Unverified'.
+
+A chore then goes into a parental verification flow (follows in "Parent Login Options.txt").
+
+A parent can set the status of the chore instance per child to Complete, Partially Complete or Incomplete.
+An incomplete task goes back into a child's tasks section for re-submission (see "Child Login Options.txt").
+
+
+The chore layout should have a tab for Instances i.e., scheduled occurrences of the chore.
+- This should have sub tabs for 'Current & Future' occurrences and 'All' ocurrences
+- This should effectively be a listing of the occurrences with schedule etc.
+Parent should have options to add or delete a schedule.
+A past schedule cannot be deleted and schedule accepted by a child requires confirmation before deletion.
+ 
