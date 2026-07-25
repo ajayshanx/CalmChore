@@ -66,7 +66,7 @@ The children profile definition should allow the following information:
 - Selected colour (must be unique within an account) - picked by the child from a curated palette of vibrant accent colours (distinct from the calm green used on the parent side). Suggested on first login alongside the nickname, and can be updated by the child at any time from their profile. Used to colour the chore calendar and applied app-wide as the child's personal accent theme (e.g. header accents, badges) throughout their own login. For a Parent-Managed child, the parent picks this instead.
 
 On each further login, the parent sees a Setup menu option (through the "Setup" word or a gear or spanner icon).
-Under the setup, the parents see Profiles and Notifications.
+Under the setup, the parents see Profiles, Notifications, and Privacy Policy.
 
 Setup --> Profiles:
 - Current logged-in parents' account details
@@ -102,6 +102,12 @@ Notification options: (checkboxes)
 The above can be selected separately for the current logged in user and for all children on the account.
 For children, only the In-app option exists.
 
+Setup --> Privacy Policy:
+This shows the full Terms & Conditions and Parental Consent Notice (see "Calm Chore Terms and Conditions.docx") in a plain, readable in-app view - not just at Create Account, but permanently accessible any time a parent wants to check it, since this is reasonably something a parent may want to revisit rather than only see once during signup.
+- At the top, show which version the parent accepted and when (e.g. "You accepted v1.0 on 25 July 2026"), and clearly flag if a newer version exists that they haven't accepted yet.
+- Ahead of the full text, call out the two things parents are most likely to want reassurance on, in plain language and without needing to read the whole notice: (1) proof photos are automatically and permanently deleted the moment a parent reviews and rates a chore submission - never stored long-term or shown to anyone else; and (2) Calm Chore never asks for or stores a child's real/legal name - only a parent-chosen username (login only) and a child-chosen nickname (the only identifier shown anywhere in the app, including to friends).
+- The full notice text follows below that summary, unchanged from what was accepted at Create Account (see "Create Account" above).
+This tab is read-only information - re-acceptance, when needed after a material change, happens through the acceptance prompt described under "Create Account", not from this Setup screen.
 
 Child Login Setup:
 When a child logs in, they also see the Setup option under which they can see profiles.

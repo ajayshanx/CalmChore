@@ -130,7 +130,7 @@ Chores section:
 -- Points
 -- Proof
 
-Clicking on the row should expand the info as a popup with the same details and the proof photo visible as a preview. This is the only window in which the photo is viewable - once the parent picks an outcome below, the photo is permanently deleted (see "Calm Chore Creation.txt").
+Clicking on the row should expand the info as a popup with the same details and the proof photo visible as a preview. This is the only window in which the photo is viewable - once the parent picks an outcome below, the photo is permanently deleted (see "Calm Chore Creation.txt"). Show a short, explicit reminder directly next to the photo (not buried in a settings page) - e.g. "This photo is permanently deleted once you select an outcome below" - so the deletion behaviour is visible right at the moment it's most relevant, not just documented in Setup --> Privacy Policy.
 The popup should also have 3 buttons in place of wordy text buttons: a custom face icon (drawn in the app's own line-art style, matching the mask figure and badges elsewhere) paired with a short always-visible label - happy face + "Completed", neutral face + "Partially Complete", sad face + "Incomplete". As the app is mobile-first, labels are always shown next to the icon rather than relying on hover.
 Clicking these should change the status of the chore instance to Verified - Complete, Verified - Partially Complete , Incomplete.
 Partially Complete should require input of "Awarded Points" i.e. of the total points, how many are awarded (defaulting to the points field for the chore).
@@ -194,6 +194,7 @@ How to sections here:
 'About the app': talk about the purpose of the app in simple terms.
 Ensure that the following phrase gets a mention somewhere... "The Calm Chore name is also a play on words, coming from the transliteration of the Hindi phrase for slacker."
 Ensure the parent is also informed or given instructions about how to add the app icon to the home screen.
+Briefly reassure the parent on privacy in plain language - proof photos are deleted automatically once reviewed, and no child's real name is ever collected - with a pointer to Setup --> Privacy Policy for the full notice.
 
 'How to use':
 Detail in a simple way, how the parent can use the app.
