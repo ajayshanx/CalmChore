@@ -5,6 +5,8 @@ import ValidatePopup from "./ValidatePopup";
 
 export type ValidationRow = {
   assignmentId: string;
+  childId: string;
+  choreInstanceId: string | null;
   choreName: string;
   childLabel: string;
   submittedAt: string | null;

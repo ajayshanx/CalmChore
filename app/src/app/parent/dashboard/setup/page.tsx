@@ -4,6 +4,9 @@ import InviteParentForm from "./InviteParentForm";
 import ResetPasscodeButton from "./ResetPasscodeButton";
 import CancelInviteButton from "./CancelInviteButton";
 import AddChildForm from "./AddChildForm";
+import AwardBadgeForm from "@/components/badges/AwardBadgeForm";
+
+type BadgeRow = { id: string; emoji: string; label: string; note: string | null; created_at: string };
 
 const STATUS_LABELS: Record<string, string> = {
   active: "Active",
@@ -30,7 +33,7 @@ export default async function ParentSetupPage() {
     redirect("/parent/finish-setup");
   }
 
-  const [{ data: allParents }, { data: children }] = await Promise.all([
+  const [{ data: allParents }, { data: children }, { data: badgeRows }] = await Promise.all([
     supabase
       .from("parents")
       .select("id, first_name, last_name, status")
@@ -41,9 +44,20 @@ export default async function ParentSetupPage() {
       .select("id, username, nickname")
       .eq("family_id", me.family_id)
       .order("created_at", { ascending: true }),
+    supabase
+      .from("child_badges")
+      .select("id, child_id, emoji, label, note, created_at")
+      .order("created_at", { ascending: false }),
   ]);
 
   const otherParents = (allParents ?? []).filter((p) => p.id !== user.id);
+
+  const badgesByChild = new Map<string, BadgeRow[]>();
+  for (const row of badgeRows ?? []) {
+    const list = badgesByChild.get(row.child_id) ?? [];
+    list.push(row);
+    badgesByChild.set(row.child_id, list);
+  }
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-65px)] max-w-2xl flex-col gap-10 px-6 py-10">
@@ -104,6 +118,7 @@ export default async function ParentSetupPage() {
             <div className="flex flex-col gap-2">
               {children.map((child) => {
                 const label = child.nickname || child.username || "Unnamed child";
+                const badges = badgesByChild.get(child.id) ?? [];
                 return (
                   <div
                     key={child.id}
@@ -113,9 +128,25 @@ export default async function ParentSetupPage() {
                     {child.username && (
                       <p className="text-sm text-calm-text/60">@{child.username}</p>
                     )}
-                    <div className="mt-1">
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
                       <ResetPasscodeButton childId={child.id} childLabel={label} />
+                      <AwardBadgeForm childId={child.id} />
                     </div>
+
+                    {badges.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {badges.map((b) => (
+                          <span
+                            key={b.id}
+                            title={b.note ?? undefined}
+                            className="flex items-center gap-1.5 rounded-full bg-calm-greenLight px-3 py-1 text-sm"
+                          >
+                            <span className="text-base leading-none">{b.emoji}</span>
+                            <span className="font-medium text-calm-green">{b.label}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}

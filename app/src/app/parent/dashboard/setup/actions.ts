@@ -192,6 +192,66 @@ export async function addChild(_prevState: unknown, formData: FormData) {
   return { success: true };
 }
 
+export async function awardBadge(_prevState: unknown, formData: FormData) {
+  const childId = String(formData.get("childId") || "");
+  const emoji = String(formData.get("emoji") || "").trim();
+  const label = String(formData.get("label") || "").trim();
+  const note = String(formData.get("note") || "").trim();
+  const choreInstanceId = String(formData.get("choreInstanceId") || "").trim() || null;
+
+  if (!childId) {
+    return { error: "Missing child." };
+  }
+  if (!emoji) {
+    return { error: "Pick an emoji for the badge." };
+  }
+  if ([...emoji].length > 4) {
+    return { error: "That doesn't look like a single emoji." };
+  }
+  if (!label) {
+    return { error: "Give the badge a name." };
+  }
+  if (label.length > 40) {
+    return { error: "Keep the badge name under 40 characters." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You must be logged in." };
+  }
+
+  const { data: parent } = await supabase
+    .from("parents")
+    .select("family_id")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!parent) {
+    return { error: "Could not find your family." };
+  }
+
+  // RLS (child_badges_family) scopes this insert to a child in this
+  // parent's own family — the child_id itself is the authorization check.
+  const { error } = await supabase.from("child_badges").insert({
+    child_id: childId,
+    emoji,
+    label,
+    note: note || null,
+    chore_instance_id: choreInstanceId,
+    awarded_by_parent_id: user.id,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/parent/dashboard/setup");
+  revalidatePath("/parent/dashboard/validate");
+  return { success: true };
+}
+
 export async function resetChildPasscode(_prevState: unknown, formData: FormData) {
   const childId = String(formData.get("childId") || "");
   const passcode = String(formData.get("passcode") || "").trim();

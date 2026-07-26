@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { validateChoreAssignment } from "./actions";
 import type { ValidationRow } from "./ValidateView";
+import AwardBadgeForm from "@/components/badges/AwardBadgeForm";
 
 const initialState: { error?: string; success?: boolean } = {};
 
@@ -148,6 +149,14 @@ export default function ValidatePopup({
             </button>
           )}
         </form>
+
+        <div className="mt-4 border-t border-calm-green/15 pt-3">
+          <AwardBadgeForm
+            childId={row.childId}
+            choreInstanceId={row.choreInstanceId ?? undefined}
+            toggleLabel="Award a badge for this"
+          />
+        </div>
       </div>
     </div>
   );

@@ -26,8 +26,8 @@ export default async function ValidatePage() {
   const { data: rows } = await supabase
     .from("chore_assignments")
     .select(
-      `id, submitted_at, proof_photo_url,
-       chore_instances ( deadline_at, points, chores ( name ) ),
+      `id, child_id, submitted_at, proof_photo_url,
+       chore_instances ( id, deadline_at, points, chores ( name ) ),
        children ( nickname, username )`
     )
     .eq("status", "unverified")
@@ -53,6 +53,8 @@ export default async function ValidatePage() {
 
       return {
         assignmentId: row.id,
+        childId: row.child_id,
+        choreInstanceId: instance?.id ?? null,
         choreName: chore?.name ?? "Chore",
         childLabel: child?.nickname || child?.username || "Child",
         submittedAt: row.submitted_at,
