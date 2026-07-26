@@ -15,3 +15,19 @@ export const PILL_CLASS_BY_COLOUR: Record<string, string> = {
 export function pillClass(colour: string | null | undefined): string {
   return PILL_CLASS_BY_COLOUR[colour ?? "neutral"] ?? PILL_CLASS_BY_COLOUR.neutral;
 }
+
+// Small solid-fill dots used in the month view, where a full pill per
+// assignment gets too busy once a chore has more than one child on it.
+export const DOT_CLASS_BY_COLOUR: Record<string, string> = {
+  blue: "bg-child-blueAccent",
+  red: "bg-child-redAccent",
+  purple: "bg-child-purpleAccent",
+  orange: "bg-child-orangeAccent",
+  gold: "bg-child-goldAccent",
+  teal: "bg-child-tealAccent",
+  neutral: "bg-calm-text/30",
+};
+
+export function dotClass(colour: string | null | undefined): string {
+  return DOT_CLASS_BY_COLOUR[colour ?? "neutral"] ?? DOT_CLASS_BY_COLOUR.neutral;
+}

@@ -2,17 +2,17 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import CalendarView from "./CalendarView";
 import type { CalendarInstance } from "@/components/chores/CalendarGrid";
+import { addDaysStr, todayStr } from "@/lib/chores/calendarDates";
 
-export default async function ParentCalendarPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ y?: string; m?: string }>;
-}) {
-  const params = await searchParams;
-  const now = new Date();
-  const year = params.y ? Number(params.y) : now.getUTCFullYear();
-  const month = params.m ? Number(params.m) - 1 : now.getUTCMonth(); // 0-indexed
+// All calendar navigation (month/week/day, prev/next, child filter) happens
+// client-side against one fetch, rather than round-tripping to the server
+// per view change — this window is generous enough for normal browsing
+// (about 2 months back, 3 months forward) without pulling a family's whole
+// chore history.
+const RANGE_START_OFFSET_DAYS = -62;
+const RANGE_END_OFFSET_DAYS = 93;
 
+export default async function ParentCalendarPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -34,18 +34,19 @@ export default async function ParentCalendarPage({
 
   const { data: children } = await supabase
     .from("children")
-    .select("id, nickname, username")
+    .select("id, nickname, username, accent_colour")
     .eq("family_id", parent.family_id)
     .order("created_at", { ascending: true });
 
   const familyChildren = (children ?? []).map((c) => ({
     id: c.id,
     label: c.nickname || c.username || "Unnamed child",
+    colour: c.accent_colour ?? "neutral",
   }));
 
-  const monthStart = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-  const monthEndDate = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-  const monthEnd = `${year}-${String(month + 1).padStart(2, "0")}-${String(monthEndDate).padStart(2, "0")}`;
+  const today = todayStr();
+  const rangeStart = addDaysStr(today, RANGE_START_OFFSET_DAYS);
+  const rangeEnd = addDaysStr(today, RANGE_END_OFFSET_DAYS);
 
   const { data: rows } = await supabase
     .from("chore_instances")
@@ -54,8 +55,8 @@ export default async function ParentCalendarPage({
        chores ( id, name, info, assignment_type ),
        chore_assignments ( id, child_id, status, children ( nickname, username, accent_colour ) )`
     )
-    .gte("scheduled_date", monthStart)
-    .lte("scheduled_date", monthEnd)
+    .gte("scheduled_date", rangeStart)
+    .lte("scheduled_date", rangeEnd)
     .order("scheduled_date", { ascending: true });
 
   const instances: CalendarInstance[] = (rows ?? []).map((row) => {
@@ -86,7 +87,7 @@ export default async function ParentCalendarPage({
   return (
     <main className="mx-auto flex min-h-[calc(100vh-65px)] max-w-3xl flex-col gap-6 px-6 py-10">
       <h1 className="text-2xl font-semibold text-calm-green">Chore Calendar</h1>
-      <CalendarView year={year} month={month} instances={instances} familyChildren={familyChildren} />
+      <CalendarView instances={instances} familyChildren={familyChildren} />
     </main>
   );
 }
