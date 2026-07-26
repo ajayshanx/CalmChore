@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { getChildSession } from "@/lib/childSession";
-import LogoutButton from "./LogoutButton";
 
 export default async function ChildDashboardPage() {
   const session = await getChildSession();
@@ -9,12 +8,11 @@ export default async function ChildDashboardPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
+    <main className="flex min-h-[calc(100vh-65px)] flex-col items-center justify-center gap-4 px-6 text-center">
       <h1 className="text-2xl font-semibold text-calm-green">Hi, {session.nickname}!</h1>
       <p className="max-w-sm text-calm-text/70">
         Your chores, points, and streak are coming next — this just confirms your login works.
       </p>
-      <LogoutButton />
     </main>
   );
 }

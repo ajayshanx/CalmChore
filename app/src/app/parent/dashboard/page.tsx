@@ -23,11 +23,13 @@ export default async function ParentDashboardPage() {
 
   const { data: parent } = await supabase
     .from("parents")
-    .select("first_name, family_id")
+    .select("first_name, family_id, status")
     .eq("id", user.id)
     .maybeSingle();
 
-  if (!parent) {
+  // No row yet, or an invited parent who hasn't set a password / accepted
+  // T&C yet — either way, finish-setup is where that gets resolved.
+  if (!parent || parent.status !== "active") {
     redirect("/parent/finish-setup");
   }
 
@@ -38,14 +40,14 @@ export default async function ParentDashboardPage() {
     .order("created_at", { ascending: true });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-8 px-6 py-10">
+    <main className="mx-auto flex min-h-[calc(100vh-65px)] max-w-2xl flex-col gap-8 px-6 py-10">
       <div>
         <h1 className="text-2xl font-semibold text-calm-green">
           Welcome back, {parent.first_name}
         </h1>
         <p className="mt-2 text-calm-text/70">
-          Chores, Chore Calendar, Validate Chores, Points Redemption, Chore Breaks, Setup, and
-          About are built next.
+          Chores, Chore Calendar, Validate Chores, Points Redemption, Chore Breaks, and About
+          are built next.
         </p>
       </div>
 

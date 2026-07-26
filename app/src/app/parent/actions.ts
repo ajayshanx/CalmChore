@@ -19,11 +19,11 @@ export async function loginParent(_prevState: unknown, formData: FormData) {
   // now instead of landing on a broken dashboard.
   const { data: existingParent } = await supabase
     .from("parents")
-    .select("id")
+    .select("id, status")
     .eq("id", data.user.id)
     .maybeSingle();
 
-  if (!existingParent) {
+  if (!existingParent || existingParent.status !== "active") {
     redirect("/parent/finish-setup");
   }
 
