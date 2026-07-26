@@ -207,36 +207,77 @@ function WeekStrip({
   const days = Array.from({ length: 7 }, (_, i) => addDaysStr(weekStart, i));
 
   return (
-    <div className="grid grid-cols-7 gap-2">
-      {days.map((dateStr) => {
-        const dayInstances = byDate.get(dateStr) ?? [];
-        const grouped = groupInstancesByChore(dayInstances);
-        const dayNum = new Date(`${dateStr}T00:00:00Z`).getUTCDate();
-        return (
-          <div key={dateStr} className="min-h-[220px] rounded-lg border border-calm-green/10 bg-white p-2">
-            <p className="mb-1 text-xs font-medium text-calm-text/50">
-              {WEEKDAYS[new Date(`${dateStr}T00:00:00Z`).getUTCDay()]} {dayNum}
-            </p>
-            <div className="flex flex-col gap-1.5">
-              {grouped.map((g) => (
-                <button
-                  key={g.choreId}
-                  onClick={() => onSelect(g.representative)}
-                  className="flex flex-col gap-1 rounded px-1.5 py-1 text-left hover:bg-calm-bg"
-                  title={g.choreName}
-                >
-                  <AssignmentDots assignments={g.assignments} />
-                  <span className="line-clamp-2 text-xs font-medium leading-tight">
-                    {g.choreName}
-                  </span>
-                </button>
-              ))}
-              {grouped.length === 0 && <p className="text-xs text-calm-text/40">—</p>}
+    <>
+      {/* Phone widths: 7 side-by-side columns leave almost no room for a
+          chore name, so stack the week as a vertical agenda instead — one
+          full-width row per day, same grouped-chore data as the grid. */}
+      <div className="flex flex-col gap-2 sm:hidden">
+        {days.map((dateStr) => {
+          const grouped = groupInstancesByChore(byDate.get(dateStr) ?? []);
+          const dayNum = new Date(`${dateStr}T00:00:00Z`).getUTCDate();
+          return (
+            <div key={dateStr} className="rounded-lg border border-calm-green/10 bg-white p-2">
+              <p className="mb-1 text-xs font-medium text-calm-text/50">
+                {WEEKDAYS[new Date(`${dateStr}T00:00:00Z`).getUTCDay()]} {dayNum}
+              </p>
+              {grouped.length === 0 ? (
+                <p className="text-xs text-calm-text/40">Nothing scheduled.</p>
+              ) : (
+                <ul className="flex flex-col gap-1">
+                  {grouped.map((g) => (
+                    <li key={g.choreId}>
+                      <button
+                        onClick={() => onSelect(g.representative)}
+                        className="flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left hover:bg-calm-bg"
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <AssignmentDots assignments={g.assignments} />
+                          <span className="truncate text-sm font-medium">{g.choreName}</span>
+                        </span>
+                        <span className="shrink-0 text-xs text-calm-text/50">
+                          {g.representative.points} pt{g.representative.points === 1 ? "" : "s"}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+
+      {/* Tablet/desktop: enough width per day to keep the side-by-side grid. */}
+      <div className="hidden gap-2 sm:grid sm:grid-cols-7">
+        {days.map((dateStr) => {
+          const grouped = groupInstancesByChore(byDate.get(dateStr) ?? []);
+          const dayNum = new Date(`${dateStr}T00:00:00Z`).getUTCDate();
+          return (
+            <div key={dateStr} className="min-h-[220px] rounded-lg border border-calm-green/10 bg-white p-2">
+              <p className="mb-1 text-xs font-medium text-calm-text/50">
+                {WEEKDAYS[new Date(`${dateStr}T00:00:00Z`).getUTCDay()]} {dayNum}
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {grouped.map((g) => (
+                  <button
+                    key={g.choreId}
+                    onClick={() => onSelect(g.representative)}
+                    className="flex flex-col gap-1 rounded px-1.5 py-1 text-left hover:bg-calm-bg"
+                    title={g.choreName}
+                  >
+                    <AssignmentDots assignments={g.assignments} />
+                    <span className="line-clamp-2 text-xs font-medium leading-tight">
+                      {g.choreName}
+                    </span>
+                  </button>
+                ))}
+                {grouped.length === 0 && <p className="text-xs text-calm-text/40">—</p>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
