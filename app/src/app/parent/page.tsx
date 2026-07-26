@@ -1,10 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { Suspense, useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import { loginParent } from "./actions";
 
 const initialState: { error?: string } = {};
+
+function ConfirmLinkNotice() {
+  const searchParams = useSearchParams();
+  const confirmLinkInvalid = searchParams.get("error") === "confirm-link-invalid";
+
+  if (!confirmLinkInvalid) return null;
+
+  return (
+    <p className="mb-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+      That confirmation link is expired or has already been used. Try logging in — if your
+      email isn&rsquo;t confirmed yet, request a new link from{" "}
+      <Link href="/parent/create-account" className="underline">
+        Create Account
+      </Link>
+      .
+    </p>
+  );
+}
 
 export default function ParentLoginPage() {
   const [state, formAction, pending] = useActionState(loginParent, initialState);
@@ -15,6 +34,10 @@ export default function ParentLoginPage() {
         <h1 className="mb-6 text-center text-2xl font-semibold text-calm-green">
           Parent Login
         </h1>
+
+        <Suspense fallback={null}>
+          <ConfirmLinkNotice />
+        </Suspense>
 
         <form action={formAction} className="flex flex-col gap-4">
           <input

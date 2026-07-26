@@ -2,19 +2,17 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { provisionFamilyForParent } from "@/lib/onboarding";
+import { SITE_URL } from "@/lib/supabase/config";
 
+// Terms & Conditions acceptance (the only point that legally matters — it's
+// tied to a real, confirmed identity) happens once, at /parent/finish-setup.
+// This step only collects credentials and kicks off email confirmation.
 export async function signUpParent(_prevState: unknown, formData: FormData) {
   const firstName = String(formData.get("firstName") || "").trim();
   const lastName = String(formData.get("lastName") || "").trim();
   const email = String(formData.get("email") || "").trim();
   const password = String(formData.get("password") || "");
-  const timezone = String(formData.get("timezone") || "UTC");
-  const consent = formData.get("consent") === "on";
 
-  if (!consent) {
-    return { error: "Please accept the Terms & Conditions to continue." };
-  }
   if (!firstName || !lastName) {
     return { error: "First and last name are required." };
   }
@@ -23,7 +21,10 @@ export async function signUpParent(_prevState: unknown, formData: FormData) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { first_name: firstName, last_name: lastName } },
+    options: {
+      data: { first_name: firstName, last_name: lastName },
+      emailRedirectTo: `${SITE_URL}/auth/confirm`,
+    },
   });
 
   if (error) {
@@ -34,24 +35,12 @@ export async function signUpParent(_prevState: unknown, formData: FormData) {
   }
 
   if (!data.session) {
-    // Email confirmation is required by this Supabase project's auth settings —
-    // no active session yet, so RLS-scoped inserts can't run. The family/parent/
-    // consent rows get created the first time this parent successfully logs in
-    // (see /parent/finish-setup), once their session exists.
+    // Normal path: email confirmation is required, so there's no session yet.
+    // /auth/confirm establishes one once the parent clicks the email link,
+    // then sends them to finish-setup for T&C + family provisioning.
     redirect("/parent/check-email");
   }
 
-  try {
-    await provisionFamilyForParent(supabase, {
-      userId: data.user.id,
-      email,
-      firstName,
-      lastName,
-      timezone,
-    });
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : "Could not finish setting up your account." };
-  }
-
-  redirect("/parent/dashboard");
+  // Email confirmation disabled for this project — session exists already.
+  redirect("/parent/finish-setup");
 }

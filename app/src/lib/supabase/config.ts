@@ -9,3 +9,9 @@ export const SUPABASE_URL =
 export const SUPABASE_ANON_KEY =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   "sb_publishable_5clwAwf7HD6ibxeBAcx57Q_wB8U0Wyq";
+
+// Used to build absolute links (e.g. the email confirmation callback) that
+// must work from a server action, where there's no browser `location` to
+// read. Override with NEXT_PUBLIC_SITE_URL if the production domain changes.
+export const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://calm-chore.vercel.app";

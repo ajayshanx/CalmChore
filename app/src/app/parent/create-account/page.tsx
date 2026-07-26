@@ -1,15 +1,13 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import Link from "next/link";
-import TermsAndConditions from "@/components/TermsAndConditions";
 import { signUpParent } from "./actions";
 
 const initialState: { error?: string } = {};
 
 export default function CreateAccountPage() {
   const [state, formAction, pending] = useActionState(signUpParent, initialState);
-  const [consent, setConsent] = useState(false);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-6 py-10">
@@ -19,7 +17,6 @@ export default function CreateAccountPage() {
         </h1>
 
         <form action={formAction} className="flex flex-col gap-4">
-          <input type="hidden" name="timezone" id="timezone-field" />
           <div className="flex gap-3">
             <input
               name="firstName"
@@ -50,13 +47,16 @@ export default function CreateAccountPage() {
             className="rounded-lg border border-calm-green/30 px-4 py-3"
           />
 
-          <TermsAndConditions checked={consent} onChange={setConsent} />
-
           {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+
+          <p className="text-xs text-calm-text/60">
+            You&rsquo;ll review and accept our Terms &amp; Conditions once your email is
+            confirmed and you log in for the first time.
+          </p>
 
           <button
             type="submit"
-            disabled={pending || !consent}
+            disabled={pending}
             className="rounded-xl bg-calm-green px-6 py-3 font-medium text-white disabled:opacity-40"
           >
             {pending ? "Creating account…" : "Create Account"}
@@ -69,13 +69,6 @@ export default function CreateAccountPage() {
           </Link>
         </p>
       </div>
-
-      {/* Capture the browser's timezone as this family's timezone of record */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `document.getElementById('timezone-field').value = Intl.DateTimeFormat().resolvedOptions().timeZone;`,
-        }}
-      />
     </main>
   );
 }
