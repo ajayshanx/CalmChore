@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import ChoreDetailPopup from "./ChoreDetailPopup";
+import { monthRange, todayStr, weekRange } from "@/lib/chores/calendarDates";
 
 export type MyChoreRow = {
   assignmentId: string;
@@ -32,17 +33,47 @@ const STATUS_LABELS: Record<string, string> = {
   verified_partially_complete: "Partially Complete",
 };
 
+type RangeFilter = "today" | "week" | "month" | "all";
+const RANGE_OPTIONS: { key: RangeFilter; label: string }[] = [
+  { key: "today", label: "Today" },
+  { key: "week", label: "This Week" },
+  { key: "month", label: "This Month" },
+  { key: "all", label: "All" },
+];
+
+// Recurring chores generate up to 60 instances at once, so without a date
+// range the list gets huge — same problem the calendar had before it got
+// Month/Week/Day views.
+function withinRange(dateStr: string, range: RangeFilter): boolean {
+  if (range === "all") return true;
+  const today = todayStr();
+  if (range === "today") return dateStr === today;
+  if (range === "week") {
+    const [start, end] = weekRange(today);
+    return dateStr >= start && dateStr <= end;
+  }
+  const [start, end] = monthRange(today);
+  return dateStr >= start && dateStr <= end;
+}
+
 export default function MyChoresView({ chores }: { chores: MyChoreRow[] }) {
   const [tab, setTab] = useState<"ongoing" | "completed">("ongoing");
+  const [range, setRange] = useState<RangeFilter>("week");
   const [selected, setSelected] = useState<MyChoreRow | null>(null);
 
-  const filtered = chores.filter((c) =>
-    tab === "ongoing" ? ONGOING_STATUSES.includes(c.status) : COMPLETED_STATUSES.includes(c.status)
-  );
+  const filtered = useMemo(() => {
+    const byStatus = chores.filter((c) =>
+      tab === "ongoing" ? ONGOING_STATUSES.includes(c.status) : COMPLETED_STATUSES.includes(c.status)
+    );
+    const byRange = byStatus.filter((c) => withinRange(c.date, range));
+    return [...byRange].sort((a, b) =>
+      tab === "ongoing" ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)
+    );
+  }, [chores, tab, range]);
 
   return (
     <div>
-      <div className="mb-4 flex gap-4 border-b border-calm-green/15">
+      <div className="mb-3 flex gap-4 border-b border-calm-green/15">
         {(["ongoing", "completed"] as const).map((t) => (
           <button
             key={t}
@@ -52,6 +83,20 @@ export default function MyChoresView({ chores }: { chores: MyChoreRow[] }) {
             }`}
           >
             {t} Chores
+          </button>
+        ))}
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-1 rounded-lg border border-calm-green/20 p-0.5">
+        {RANGE_OPTIONS.map((opt) => (
+          <button
+            key={opt.key}
+            onClick={() => setRange(opt.key)}
+            className={`rounded-md px-3 py-1 text-sm ${
+              range === opt.key ? "bg-calm-green text-white" : "text-calm-green"
+            }`}
+          >
+            {opt.label}
           </button>
         ))}
       </div>
@@ -76,7 +121,9 @@ export default function MyChoresView({ chores }: { chores: MyChoreRow[] }) {
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-calm-text/60">No {tab} chores.</p>
+        <p className="text-sm text-calm-text/60">
+          No {tab} chores{range !== "all" ? ` for ${RANGE_OPTIONS.find((o) => o.key === range)?.label.toLowerCase()}` : ""}.
+        </p>
       )}
 
       {selected && <ChoreDetailPopup chore={selected} onClose={() => setSelected(null)} />}
