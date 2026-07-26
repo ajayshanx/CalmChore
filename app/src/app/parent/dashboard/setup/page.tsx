@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import InviteParentForm from "./InviteParentForm";
 import ResetPasscodeButton from "./ResetPasscodeButton";
+import CancelInviteButton from "./CancelInviteButton";
 import AddChildForm from "./AddChildForm";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -70,15 +71,23 @@ export default async function ParentSetupPage() {
                 <span className="font-medium">
                   {p.first_name} {p.last_name}
                 </span>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${
-                    p.status === "active"
-                      ? "bg-calm-greenLight text-calm-green"
-                      : "bg-amber-100 text-amber-800"
-                  }`}
-                >
-                  {STATUS_LABELS[p.status] ?? p.status}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-medium ${
+                      p.status === "active"
+                        ? "bg-calm-greenLight text-calm-green"
+                        : "bg-amber-100 text-amber-800"
+                    }`}
+                  >
+                    {STATUS_LABELS[p.status] ?? p.status}
+                  </span>
+                  {p.status === "invited" && (
+                    <CancelInviteButton
+                      parentId={p.id}
+                      parentLabel={`${p.first_name} ${p.last_name}`}
+                    />
+                  )}
+                </div>
               </div>
             ))}
           </div>

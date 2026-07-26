@@ -77,6 +77,60 @@ export async function inviteParent(_prevState: unknown, formData: FormData) {
   return { success: true };
 }
 
+export async function cancelParentInvite(_prevState: unknown, formData: FormData) {
+  const targetParentId = String(formData.get("parentId") || "");
+  if (!targetParentId) {
+    return { error: "Missing invite." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You must be logged in." };
+  }
+
+  const { data: requester } = await supabase
+    .from("parents")
+    .select("family_id, status")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!requester || requester.status !== "active") {
+    return { error: "Only an active parent on this account can cancel an invite." };
+  }
+
+  // Service-role client: there's no DELETE policy on parents for the
+  // authenticated role (a parent can't remove their own or anyone else's
+  // account via RLS), so this needs to bypass RLS — the checks above and
+  // below are what stand in for it here.
+  const service = createServiceClient();
+
+  const { data: target } = await service
+    .from("parents")
+    .select("id, family_id, status")
+    .eq("id", targetParentId)
+    .maybeSingle();
+
+  if (!target || target.family_id !== requester.family_id) {
+    return { error: "Invite not found." };
+  }
+  if (target.status !== "invited") {
+    return { error: "Only a pending invite can be cancelled." };
+  }
+
+  // Deletes the auth user, which cascades to the parents row (parents.id
+  // has ON DELETE CASCADE against auth.users) — this also frees up the
+  // email address so it can be invited again from scratch.
+  const { error } = await service.auth.admin.deleteUser(targetParentId);
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/parent/dashboard/setup");
+  return { success: true };
+}
+
 const ACCENT_COLOURS = ["blue", "red", "purple", "orange", "gold", "teal"] as const;
 
 export async function addChild(_prevState: unknown, formData: FormData) {
