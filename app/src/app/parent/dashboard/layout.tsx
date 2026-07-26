@@ -13,6 +13,15 @@ export default function ParentDashboardLayout({
           <Link href="/parent/dashboard" className="hover:underline">
             Dashboard
           </Link>
+          <Link href="/parent/dashboard/chores" className="hover:underline">
+            Chores
+          </Link>
+          <Link href="/parent/dashboard/calendar" className="hover:underline">
+            Calendar
+          </Link>
+          <Link href="/parent/dashboard/validate" className="hover:underline">
+            Validate
+          </Link>
           <Link href="/parent/dashboard/setup" className="hover:underline">
             Setup
           </Link>
