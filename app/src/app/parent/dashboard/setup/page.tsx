@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import InviteParentForm from "./InviteParentForm";
 import ResetPasscodeButton from "./ResetPasscodeButton";
+import AddChildForm from "./AddChildForm";
 
 const STATUS_LABELS: Record<string, string> = {
   active: "Active",
@@ -113,6 +114,9 @@ export default async function ParentSetupPage() {
           ) : (
             <p className="text-sm text-calm-text/60">No children added yet.</p>
           )}
+          <div className="mt-3">
+            <AddChildForm />
+          </div>
         </div>
       </section>
     </main>

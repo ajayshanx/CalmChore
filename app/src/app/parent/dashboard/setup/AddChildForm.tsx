@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState, useEffect } from "react";
 import { addChild } from "./actions";
 
 const ACCENT_OPTIONS = [
@@ -15,14 +15,45 @@ const ACCENT_OPTIONS = [
 const initialState: { error?: string; success?: boolean } = {};
 
 export default function AddChildForm() {
+  const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(addChild, initialState);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (state?.success) {
+      formRef.current?.reset();
+      setOpen(false);
+    }
+  }, [state?.success]);
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="self-start rounded-xl bg-calm-green px-5 py-2.5 text-sm font-medium text-white"
+      >
+        Add a Child
+      </button>
+    );
+  }
 
   return (
     <form
+      ref={formRef}
       action={formAction}
       className="flex flex-col gap-3 rounded-xl border border-calm-green/20 bg-white p-5"
     >
-      <h2 className="text-lg font-medium text-calm-green">Add a Child</h2>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium text-calm-green">Add a Child</h3>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="text-sm text-calm-text/60 underline"
+        >
+          Cancel
+        </button>
+      </div>
 
       <div className="flex gap-3">
         <input
@@ -63,12 +94,11 @@ export default function AddChildForm() {
       </select>
 
       {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
-      {state?.success && <p className="text-sm text-calm-green">Child added.</p>}
 
       <button
         type="submit"
         disabled={pending}
-        className="rounded-xl bg-calm-green px-5 py-2.5 font-medium text-white disabled:opacity-50"
+        className="self-start rounded-xl bg-calm-green px-5 py-2.5 font-medium text-white disabled:opacity-50"
       >
         {pending ? "Adding…" : "Add Child"}
       </button>
