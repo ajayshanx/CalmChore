@@ -34,6 +34,12 @@ export default async function ChildCalendarPage() {
   const rangeStart = addDaysStr(today, RANGE_START_OFFSET_DAYS);
   const rangeEnd = addDaysStr(today, RANGE_END_OFFSET_DAYS);
 
+  // Mark the calendar as viewed so the "new chores" badge in the nav clears.
+  await supabase
+    .from("children")
+    .update({ last_calendar_view_at: new Date().toISOString() })
+    .eq("id", session.childId);
+
   const { data: rows } = await supabase
     .from("chore_instances")
     .select(
