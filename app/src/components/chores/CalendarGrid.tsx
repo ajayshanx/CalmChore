@@ -15,7 +15,7 @@ export type { CalendarAssignment, CalendarInstance } from "@/lib/chores/types";
 export type ViewMode = "month" | "week" | "day";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MAX_GROUPS_PER_MONTH_CELL = 3;
+const MAX_GROUPS_PER_MONTH_CELL = 2;
 
 function groupByDate(instances: CalendarInstance[]): Map<string, CalendarInstance[]> {
   const map = new Map<string, CalendarInstance[]>();
@@ -163,19 +163,21 @@ function MonthGrid({
           return (
             <div
               key={dateStr}
-              className="min-h-[76px] rounded-lg border border-calm-green/10 bg-white p-1 text-left"
+              className="min-h-[104px] rounded-lg border border-calm-green/10 bg-white p-1 text-left"
             >
               <p className="text-xs text-calm-text/50">{day}</p>
-              <div className="mt-1 flex flex-col gap-0.5">
+              <div className="mt-1 flex flex-col gap-1">
                 {grouped.slice(0, MAX_GROUPS_PER_MONTH_CELL).map((g) => (
                   <button
                     key={g.choreId}
                     onClick={() => onSelect(g.representative)}
-                    className="flex items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[11px] hover:bg-calm-bg"
+                    className="flex flex-col gap-0.5 rounded px-1 py-0.5 text-left hover:bg-calm-bg"
                     title={g.choreName}
                   >
                     <AssignmentDots assignments={g.assignments} />
-                    <span className="truncate">{g.choreName}</span>
+                    <span className="line-clamp-2 text-[10px] leading-tight text-calm-text">
+                      {g.choreName}
+                    </span>
                   </button>
                 ))}
                 {grouped.length > MAX_GROUPS_PER_MONTH_CELL && (
@@ -215,16 +217,17 @@ function WeekStrip({
             <p className="mb-1 text-xs font-medium text-calm-text/50">
               {WEEKDAYS[new Date(`${dateStr}T00:00:00Z`).getUTCDay()]} {dayNum}
             </p>
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1.5">
               {grouped.map((g) => (
                 <button
                   key={g.choreId}
                   onClick={() => onSelect(g.representative)}
-                  className="rounded px-1.5 py-1 text-left text-xs hover:bg-calm-bg"
+                  className="flex flex-col gap-1 rounded px-1.5 py-1 text-left hover:bg-calm-bg"
+                  title={g.choreName}
                 >
-                  <span className="mb-0.5 flex items-center gap-1">
-                    <AssignmentDots assignments={g.assignments} />
-                    <span className="truncate font-medium">{g.choreName}</span>
+                  <AssignmentDots assignments={g.assignments} />
+                  <span className="line-clamp-2 text-xs font-medium leading-tight">
+                    {g.choreName}
                   </span>
                 </button>
               ))}
