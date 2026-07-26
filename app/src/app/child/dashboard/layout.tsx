@@ -13,11 +13,11 @@ export default function ChildDashboardLayout({
           <Link href="/child/dashboard" className="hover:underline">
             Home
           </Link>
-          <Link href="/child/dashboard/my-chores" className="hover:underline">
-            My Chores
-          </Link>
           <Link href="/child/dashboard/calendar" className="hover:underline">
             Calendar
+          </Link>
+          <Link href="/child/dashboard/my-chores" className="hover:underline">
+            My Chores
           </Link>
           <Link href="/child/dashboard/setup" className="hover:underline">
             Setup
