@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import CreateChoreForm, { type ChorePrefill } from "./CreateChoreForm";
+import ChoreDetailPopup from "./ChoreDetailPopup";
 import { AGE_GROUPS, EXAMPLE_CHORES } from "@/lib/chores/exampleChores";
 
 export type ChoreRow = {
@@ -28,6 +29,11 @@ export default function ChoresView({
   const [showCreate, setShowCreate] = useState(false);
   const [prefill, setPrefill] = useState<ChorePrefill | undefined>(undefined);
   const [ageFilter, setAgeFilter] = useState<string>("all");
+  const [selectedChoreId, setSelectedChoreId] = useState<string | null>(null);
+  // Derived from the live `chores` prop (rather than snapshotted at click
+  // time) so the popup reflects a just-saved edit once the route refreshes,
+  // instead of showing stale values from before the save.
+  const selectedChore = chores.find((c) => c.id === selectedChoreId) ?? null;
 
   const filteredChores = useMemo(() => {
     const byStatus = chores.filter((c) => c.status === (tab === "inactive" ? "inactive" : "active"));
@@ -105,17 +111,19 @@ export default function ChoresView({
           {filteredChores.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {filteredChores.map((c) => (
-                <li
-                  key={c.id}
-                  className="rounded-lg border border-calm-green/20 bg-white px-4 py-3"
-                >
-                  <p className="font-medium">{c.name}</p>
-                  {c.info && <p className="text-sm text-calm-text/60">{c.info}</p>}
-                  <p className="mt-1 text-sm text-calm-text/60">
-                    {c.points} pt{c.points === 1 ? "" : "s"} ·{" "}
-                    {c.assignment_type === "multi" ? "Multiple children" : "Single child"}
-                    {c.requires_proof ? " · Photo proof required" : ""}
-                  </p>
+                <li key={c.id}>
+                  <button
+                    onClick={() => setSelectedChoreId(c.id)}
+                    className="w-full rounded-lg border border-calm-green/20 bg-white px-4 py-3 text-left hover:border-calm-green/40"
+                  >
+                    <p className="font-medium">{c.name}</p>
+                    {c.info && <p className="text-sm text-calm-text/60">{c.info}</p>}
+                    <p className="mt-1 text-sm text-calm-text/60">
+                      {c.points} pt{c.points === 1 ? "" : "s"} ·{" "}
+                      {c.assignment_type === "multi" ? "Multiple children" : "Single child"}
+                      {c.requires_proof ? " · Photo proof required" : ""}
+                    </p>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -175,6 +183,14 @@ export default function ChoresView({
             ))}
           </ul>
         </div>
+      )}
+
+      {selectedChore && (
+        <ChoreDetailPopup
+          chore={selectedChore}
+          familyChildren={familyChildren}
+          onClose={() => setSelectedChoreId(null)}
+        />
       )}
     </div>
   );
