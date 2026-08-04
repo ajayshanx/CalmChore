@@ -110,9 +110,6 @@ export default async function ParentDashboardPage() {
         <h1 className="text-2xl font-semibold text-calm-green">
           Welcome back, {parent.first_name}
         </h1>
-        <p className="mt-2 text-calm-text/70">
-          Friends is built next.
-        </p>
       </div>
 
       <section>
