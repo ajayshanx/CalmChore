@@ -93,6 +93,9 @@ export default async function ChildDashboardLayout({
           <Link href="/child/dashboard/redeem" className="hover:underline">
             Redeem Points
           </Link>
+          <Link href="/child/dashboard/feedback" className="hover:underline">
+            Feedback
+          </Link>
           <Link href="/child/dashboard/setup" className="hover:underline">
             Setup
           </Link>

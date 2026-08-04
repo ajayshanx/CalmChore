@@ -59,6 +59,9 @@ export default async function ParentDashboardLayout({
           <Link href="/parent/dashboard/progress" className="hover:underline">
             Child Progress
           </Link>
+          <Link href="/parent/dashboard/feedback" className="hover:underline">
+            Feedback
+          </Link>
           <Link href="/parent/dashboard/setup" className="hover:underline">
             Setup
           </Link>
