@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { submitChoreProof } from "./actions";
 import type { MyChoreRow } from "./MyChoresView";
 
@@ -36,6 +36,17 @@ export default function ChoreDetailPopup({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const canSubmit = ["assigned", "accepted", "incomplete"].includes(chore.status);
+
+  // Server Actions here don't automatically close/refresh this popup — the
+  // parent list re-fetches via revalidatePath, but this modal's own `chore`
+  // prop is a snapshot taken when it was opened, so without this the status
+  // (and therefore canSubmit) never changes and the button just sits there
+  // with no feedback after a successful submission.
+  useEffect(() => {
+    if (state?.success) {
+      onClose();
+    }
+  }, [state?.success, onClose]);
 
   const timeline: { label: string; at: string }[] = [];
   if (chore.acceptedAt) timeline.push({ label: "Accepted", at: chore.acceptedAt });

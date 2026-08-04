@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { validateChoreAssignment } from "./actions";
 import type { ValidationRow } from "./ValidateView";
 import AwardBadgeForm from "@/components/badges/AwardBadgeForm";
@@ -18,6 +18,17 @@ export default function ValidatePopup({
   const [outcome, setOutcome] = useState<
     "verified_complete" | "verified_partially_complete" | "incomplete" | null
   >(null);
+
+  // Same missing-feedback bug as the child-side Accept/Submit popups: without
+  // this, a successful outcome leaves the popup open with no confirmation,
+  // and the assignment (already validated) would error if confirmed again.
+  // Award a badge for this submission before confirming an outcome, if
+  // wanted — the popup closes as soon as the outcome is saved.
+  useEffect(() => {
+    if (state?.success) {
+      onClose();
+    }
+  }, [state?.success, onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import type { CalendarInstance } from "@/components/chores/CalendarGrid";
 import { acceptChoreInstance } from "./actions";
 
@@ -31,6 +31,15 @@ export default function ChorePopup({
   const canAccept =
     isUnassigned ||
     (instance.assignmentType === "multi" && !myAssignment);
+
+  // Same fix as the My Chores submit popup: without this, a successful
+  // Accept leaves the popup open showing a stale "Accept" button with no
+  // feedback, and tapping it again fails since the chore's already accepted.
+  useEffect(() => {
+    if (state?.success) {
+      onClose();
+    }
+  }, [state?.success, onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
