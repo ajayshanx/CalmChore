@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { saveNotificationPreferences } from "./actions";
-import { ACTION_LABELS, NOTIFICATION_ACTIONS, type NotificationAction } from "@/lib/notifications";
+import { ACTION_LABELS, NOTIFICATION_ACTIONS, type NotificationAction } from "@/lib/notificationCatalog";
 
 const initialState: { error?: string; success?: boolean } = {};
 

@@ -1,55 +1,11 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { NotificationAction } from "@/lib/notificationCatalog";
 
-// The 12 actions from "Calm Chore Setup.txt" -> Setup --> Notifications.
-// "chore_value_update" and "chore_deadline_update" aren't wired to a live
-// trigger yet since chore editing doesn't exist in the app yet — they're
-// still listed here (and configurable) so the settings screen matches spec,
-// ready to fire once chore editing is built. Same for "friend_addition"
-// until the Friends feature exists.
-export type NotificationAction =
-  | "parent_addition"
-  | "child_addition"
-  | "chore_addition"
-  | "chore_assignment"
-  | "chore_value_update"
-  | "chore_deadline_update"
-  | "chore_acceptance"
-  | "chore_completion"
-  | "chore_assessment"
-  | "point_awarding"
-  | "point_redemption"
-  | "friend_addition";
-
-export const NOTIFICATION_ACTIONS: NotificationAction[] = [
-  "parent_addition",
-  "child_addition",
-  "chore_addition",
-  "chore_assignment",
-  "chore_value_update",
-  "chore_deadline_update",
-  "chore_acceptance",
-  "chore_completion",
-  "chore_assessment",
-  "point_awarding",
-  "point_redemption",
-  "friend_addition",
-];
-
-export const ACTION_LABELS: Record<NotificationAction, string> = {
-  parent_addition: "Parent addition",
-  child_addition: "Child addition",
-  chore_addition: "Chore addition",
-  chore_assignment: "Chore assignment",
-  chore_value_update: "Chore value additions / updates",
-  chore_deadline_update: "Chore deadline addition / update",
-  chore_acceptance: "Chore acceptance",
-  chore_completion: "Chore completion",
-  chore_assessment: "Chore assessment",
-  point_awarding: "Point awarding",
-  point_redemption: "Point redemption",
-  friend_addition: "Friend addition",
-};
+// Re-exported so existing server-side importers of "@/lib/notifications"
+// keep working unchanged — only client components need to import the
+// catalog directly (see notificationCatalog.ts for why).
+export { NOTIFICATION_ACTIONS, ACTION_LABELS, type NotificationAction } from "@/lib/notificationCatalog";
 
 type NotifyParentParams = {
   familyId: string;
