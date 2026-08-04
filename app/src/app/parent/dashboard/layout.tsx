@@ -56,6 +56,9 @@ export default async function ParentDashboardLayout({
           <Link href="/parent/dashboard/redemption" className="hover:underline">
             Points Redemption
           </Link>
+          <Link href="/parent/dashboard/progress" className="hover:underline">
+            Child Progress
+          </Link>
           <Link href="/parent/dashboard/setup" className="hover:underline">
             Setup
           </Link>
