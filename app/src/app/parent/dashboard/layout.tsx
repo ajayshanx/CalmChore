@@ -22,6 +22,9 @@ export default function ParentDashboardLayout({
           <Link href="/parent/dashboard/validate" className="hover:underline">
             Validate
           </Link>
+          <Link href="/parent/dashboard/breaks" className="hover:underline">
+            Chore Breaks
+          </Link>
           <Link href="/parent/dashboard/setup" className="hover:underline">
             Setup
           </Link>

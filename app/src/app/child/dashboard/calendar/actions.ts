@@ -28,6 +28,25 @@ export async function acceptChoreInstance(_prevState: unknown, formData: FormDat
     return { error: "Chore not found." };
   }
 
+  const { data: scheduled } = await supabase
+    .from("chore_instances")
+    .select("scheduled_date")
+    .eq("id", instanceId)
+    .maybeSingle();
+  if (scheduled?.scheduled_date) {
+    const { data: activeBreak } = await supabase
+      .from("chore_breaks")
+      .select("id, chore_break_children!inner ( child_id )")
+      .eq("status", "active")
+      .eq("chore_break_children.child_id", session.childId)
+      .lte("start_date", scheduled.scheduled_date)
+      .gte("end_date", scheduled.scheduled_date)
+      .maybeSingle();
+    if (activeBreak) {
+      return { error: "You're on a Chore Break that day — no need to accept this one." };
+    }
+  }
+
   const { data: existingAssignments } = await supabase
     .from("chore_assignments")
     .select("id, child_id")

@@ -24,6 +24,25 @@ export async function assignChildToInstance(_prevState: unknown, formData: FormD
     return { error: "You must be logged in." };
   }
 
+  const { data: instance } = await supabase
+    .from("chore_instances")
+    .select("scheduled_date")
+    .eq("id", instanceId)
+    .maybeSingle();
+  if (instance?.scheduled_date) {
+    const { data: activeBreak } = await supabase
+      .from("chore_breaks")
+      .select("id, chore_break_children!inner ( child_id )")
+      .eq("status", "active")
+      .eq("chore_break_children.child_id", childId)
+      .lte("start_date", instance.scheduled_date)
+      .gte("end_date", instance.scheduled_date)
+      .maybeSingle();
+    if (activeBreak) {
+      return { error: "This child is on a Chore Break that day." };
+    }
+  }
+
   const { error } = await supabase
     .from("chore_assignments")
     .insert({ chore_instance_id: instanceId, child_id: childId, status: "assigned" });

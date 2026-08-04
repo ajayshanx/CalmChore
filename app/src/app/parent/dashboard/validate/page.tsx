@@ -32,6 +32,7 @@ export default async function ValidatePage() {
          children ( nickname, username )`
       )
       .eq("status", "unverified")
+      .is("hidden_by_break_id", null)
       .order("submitted_at", { ascending: true }),
     supabase
       .from("chore_freezes")

@@ -47,6 +47,14 @@ function AssignmentDots({ assignments }: { assignments: CalendarInstance["assign
   );
 }
 
+function BreakBadge() {
+  return (
+    <span className="inline-block rounded-full bg-sky-100 px-1.5 py-0.5 text-[9px] font-medium text-sky-800">
+      ❄️ Break
+    </span>
+  );
+}
+
 export default function CalendarGrid({
   viewMode,
   selectedDate,
@@ -55,6 +63,7 @@ export default function CalendarGrid({
   onNavigate,
   onViewModeChange,
   onToday,
+  breakDates,
 }: {
   viewMode: ViewMode;
   selectedDate: string;
@@ -63,6 +72,7 @@ export default function CalendarGrid({
   onNavigate: (direction: -1 | 1) => void;
   onViewModeChange: (mode: ViewMode) => void;
   onToday: () => void;
+  breakDates?: Set<string>;
 }) {
   const byDate = groupByDate(instances);
 
@@ -113,13 +123,13 @@ export default function CalendarGrid({
       </div>
 
       {viewMode === "month" && (
-        <MonthGrid selectedDate={selectedDate} byDate={byDate} onSelect={onSelect} />
+        <MonthGrid selectedDate={selectedDate} byDate={byDate} onSelect={onSelect} breakDates={breakDates} />
       )}
       {viewMode === "week" && (
-        <WeekStrip selectedDate={selectedDate} byDate={byDate} onSelect={onSelect} />
+        <WeekStrip selectedDate={selectedDate} byDate={byDate} onSelect={onSelect} breakDates={breakDates} />
       )}
       {viewMode === "day" && (
-        <DayList selectedDate={selectedDate} byDate={byDate} onSelect={onSelect} />
+        <DayList selectedDate={selectedDate} byDate={byDate} onSelect={onSelect} breakDates={breakDates} />
       )}
     </div>
   );
@@ -129,10 +139,12 @@ function MonthGrid({
   selectedDate,
   byDate,
   onSelect,
+  breakDates,
 }: {
   selectedDate: string;
   byDate: Map<string, CalendarInstance[]>;
   onSelect: (instance: CalendarInstance) => void;
+  breakDates?: Set<string>;
 }) {
   const anchor = new Date(`${selectedDate}T00:00:00Z`);
   const year = anchor.getUTCFullYear();
@@ -166,6 +178,11 @@ function MonthGrid({
               className="min-h-[104px] rounded-lg border border-calm-green/10 bg-white p-1 text-left"
             >
               <p className="text-xs text-calm-text/50">{day}</p>
+              {breakDates?.has(dateStr) && (
+                <div className="mt-0.5">
+                  <BreakBadge />
+                </div>
+              )}
               <div className="mt-1 flex flex-col gap-1">
                 {grouped.slice(0, MAX_GROUPS_PER_MONTH_CELL).map((g) => (
                   <button
@@ -198,10 +215,12 @@ function WeekStrip({
   selectedDate,
   byDate,
   onSelect,
+  breakDates,
 }: {
   selectedDate: string;
   byDate: Map<string, CalendarInstance[]>;
   onSelect: (instance: CalendarInstance) => void;
+  breakDates?: Set<string>;
 }) {
   const [weekStart] = weekRange(selectedDate);
   const days = Array.from({ length: 7 }, (_, i) => addDaysStr(weekStart, i));
@@ -217,8 +236,9 @@ function WeekStrip({
           const dayNum = new Date(`${dateStr}T00:00:00Z`).getUTCDate();
           return (
             <div key={dateStr} className="rounded-lg border border-calm-green/10 bg-white p-2">
-              <p className="mb-1 text-xs font-medium text-calm-text/50">
+              <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-calm-text/50">
                 {WEEKDAYS[new Date(`${dateStr}T00:00:00Z`).getUTCDay()]} {dayNum}
+                {breakDates?.has(dateStr) && <BreakBadge />}
               </p>
               {grouped.length === 0 ? (
                 <p className="text-xs text-calm-text/40">Nothing scheduled.</p>
@@ -254,8 +274,9 @@ function WeekStrip({
           const dayNum = new Date(`${dateStr}T00:00:00Z`).getUTCDate();
           return (
             <div key={dateStr} className="min-h-[220px] rounded-lg border border-calm-green/10 bg-white p-2">
-              <p className="mb-1 text-xs font-medium text-calm-text/50">
+              <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-calm-text/50">
                 {WEEKDAYS[new Date(`${dateStr}T00:00:00Z`).getUTCDay()]} {dayNum}
+                {breakDates?.has(dateStr) && <BreakBadge />}
               </p>
               <div className="flex flex-col gap-1.5">
                 {grouped.map((g) => (
@@ -285,52 +306,62 @@ function DayList({
   selectedDate,
   byDate,
   onSelect,
+  breakDates,
 }: {
   selectedDate: string;
   byDate: Map<string, CalendarInstance[]>;
   onSelect: (instance: CalendarInstance) => void;
+  breakDates?: Set<string>;
 }) {
   const grouped = groupInstancesByChore(byDate.get(selectedDate) ?? []);
-
-  if (grouped.length === 0) {
-    return <p className="text-sm text-calm-text/60">Nothing scheduled this day.</p>;
-  }
+  const isBreakDay = breakDates?.has(selectedDate) ?? false;
 
   return (
-    <ul className="flex flex-col gap-2">
-      {grouped.map((g) => (
-        <li key={g.choreId}>
-          <button
-            onClick={() => onSelect(g.representative)}
-            className="flex w-full items-center justify-between rounded-lg border border-calm-green/20 bg-white px-4 py-3 text-left"
-          >
-            <div>
-              <p className="font-medium">{g.choreName}</p>
-              <p className="text-sm text-calm-text/60">
-                {g.representative.points} pt{g.representative.points === 1 ? "" : "s"}
-                {g.representative.time ? ` · ${g.representative.time}` : ""}
-              </p>
-            </div>
-            <div className="flex flex-col items-end gap-1">
-              <AssignmentDots assignments={g.assignments} />
-              {g.assignments.length > 0 ? (
-                <span className="flex flex-wrap justify-end gap-1">
-                  {g.assignments.map((a) => (
-                    <span
-                      key={a.id}
-                      className={`rounded-full px-2 py-0.5 text-[11px] ${pillClass(a.colour)}`}
-                    >
-                      {a.childLabel}
+    <div className="flex flex-col gap-2">
+      {isBreakDay && (
+        <div className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">
+          ❄️ Chore Break — no chores due today.
+        </div>
+      )}
+      {grouped.length === 0 ? (
+        <p className="text-sm text-calm-text/60">Nothing scheduled this day.</p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {grouped.map((g) => (
+            <li key={g.choreId}>
+              <button
+                onClick={() => onSelect(g.representative)}
+                className="flex w-full items-center justify-between rounded-lg border border-calm-green/20 bg-white px-4 py-3 text-left"
+              >
+                <div>
+                  <p className="font-medium">{g.choreName}</p>
+                  <p className="text-sm text-calm-text/60">
+                    {g.representative.points} pt{g.representative.points === 1 ? "" : "s"}
+                    {g.representative.time ? ` · ${g.representative.time}` : ""}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <AssignmentDots assignments={g.assignments} />
+                  {g.assignments.length > 0 ? (
+                    <span className="flex flex-wrap justify-end gap-1">
+                      {g.assignments.map((a) => (
+                        <span
+                          key={a.id}
+                          className={`rounded-full px-2 py-0.5 text-[11px] ${pillClass(a.colour)}`}
+                        >
+                          {a.childLabel}
+                        </span>
+                      ))}
                     </span>
-                  ))}
-                </span>
-              ) : (
-                <span className="text-xs text-calm-text/50">Unassigned</span>
-              )}
-            </div>
-          </button>
-        </li>
-      ))}
-    </ul>
+                  ) : (
+                    <span className="text-xs text-calm-text/50">Unassigned</span>
+                  )}
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

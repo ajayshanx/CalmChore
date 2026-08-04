@@ -50,7 +50,11 @@ export default async function ParentDashboardPage() {
         ? supabase.from("points_ledger").select("child_id, delta").in("child_id", childIds)
         : Promise.resolve({ data: [] as { child_id: string; delta: number }[] }),
       childIds.length
-        ? supabase.from("chore_assignments").select("child_id, status").in("child_id", childIds)
+        ? supabase
+            .from("chore_assignments")
+            .select("child_id, status")
+            .in("child_id", childIds)
+            .is("hidden_by_break_id", null)
         : Promise.resolve({ data: [] as { child_id: string; status: string }[] }),
       supabase
         .from("chore_assignments")
@@ -58,6 +62,7 @@ export default async function ParentDashboardPage() {
           `id, status, chore_instances ( scheduled_date, chores ( name ) ), children ( nickname, username, accent_colour )`
         )
         .in("status", ONGOING_STATUSES)
+        .is("hidden_by_break_id", null)
         .order("created_at", { ascending: false })
         .limit(10),
       childIds.length
@@ -106,7 +111,7 @@ export default async function ParentDashboardPage() {
           Welcome back, {parent.first_name}
         </h1>
         <p className="mt-2 text-calm-text/70">
-          Chore Freezes, Points Redemption, Chore Breaks, Child Progress detail, and About are built next.
+          Points Redemption, Child Progress detail, and About are built next.
         </p>
       </div>
 

@@ -50,16 +50,25 @@ export default async function ParentCalendarPage() {
   const rangeStart = addDaysStr(today, RANGE_START_OFFSET_DAYS);
   const rangeEnd = addDaysStr(today, RANGE_END_OFFSET_DAYS);
 
-  const { data: rows } = await supabase
-    .from("chore_instances")
-    .select(
-      `id, scheduled_date, scheduled_time, deadline_at, points,
-       chores ( id, name, info, assignment_type ),
-       chore_assignments ( id, child_id, status, children ( nickname, username, accent_colour ) )`
-    )
-    .gte("scheduled_date", rangeStart)
-    .lte("scheduled_date", rangeEnd)
-    .order("scheduled_date", { ascending: true });
+  const [{ data: rows }, { data: breakRows }] = await Promise.all([
+    supabase
+      .from("chore_instances")
+      .select(
+        `id, scheduled_date, scheduled_time, deadline_at, points,
+         chores ( id, name, info, assignment_type ),
+         chore_assignments ( id, child_id, status, hidden_by_break_id, children ( nickname, username, accent_colour ) )`
+      )
+      .gte("scheduled_date", rangeStart)
+      .lte("scheduled_date", rangeEnd)
+      .order("scheduled_date", { ascending: true }),
+    supabase
+      .from("chore_breaks")
+      .select("start_date, end_date, chore_break_children ( child_id )")
+      .eq("family_id", parent.family_id)
+      .eq("status", "active")
+      .lte("start_date", rangeEnd)
+      .gte("end_date", rangeStart),
+  ]);
 
   const instances: CalendarInstance[] = (rows ?? []).map((row) => {
     const chore = Array.isArray(row.chores) ? row.chores[0] : row.chores;
@@ -73,23 +82,42 @@ export default async function ParentCalendarPage() {
       choreName: chore?.name ?? "Chore",
       choreInfo: chore?.info ?? null,
       assignmentType: chore?.assignment_type ?? "single",
-      assignments: (row.chore_assignments ?? []).map((a) => {
-        const child = Array.isArray(a.children) ? a.children[0] : a.children;
-        return {
-          id: a.id,
-          childId: a.child_id,
-          childLabel: child?.nickname || child?.username || "Child",
-          colour: child?.accent_colour ?? "neutral",
-          status: a.status,
-        };
-      }),
+      assignments: (row.chore_assignments ?? [])
+        .filter((a) => !a.hidden_by_break_id)
+        .map((a) => {
+          const child = Array.isArray(a.children) ? a.children[0] : a.children;
+          return {
+            id: a.id,
+            childId: a.child_id,
+            childLabel: child?.nickname || child?.username || "Child",
+            colour: child?.accent_colour ?? "neutral",
+            status: a.status,
+          };
+        }),
     };
   });
+
+  // Expand each active break into { date, childIds } entries so the
+  // calendar can show a "Chore Break" marker per affected child, per day.
+  const breakDaysByChild: { date: string; childIds: string[] }[] = [];
+  for (const row of breakRows ?? []) {
+    const childIds = (row.chore_break_children ?? []).map((c) => c.child_id);
+    let cursor = row.start_date;
+    while (cursor <= row.end_date) {
+      breakDaysByChild.push({ date: cursor, childIds });
+      cursor = addDaysStr(cursor, 1);
+    }
+  }
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-65px)] max-w-3xl flex-col gap-6 px-6 py-10">
       <h1 className="text-2xl font-semibold text-calm-green">Chore Calendar</h1>
-      <CalendarView instances={instances} familyChildren={familyChildren} initialToday={today} />
+      <CalendarView
+        instances={instances}
+        familyChildren={familyChildren}
+        initialToday={today}
+        breakDaysByChild={breakDaysByChild}
+      />
     </main>
   );
 }

@@ -24,6 +24,7 @@ export default async function MyChoresPage() {
        )`
     )
     .eq("child_id", session.childId)
+    .is("hidden_by_break_id", null) // hidden while a Chore Break covers that day
     .order("created_at", { ascending: false });
 
   const myChores: MyChoreRow[] = (rows ?? []).map((row) => {

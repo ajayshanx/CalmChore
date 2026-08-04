@@ -24,11 +24,13 @@ export default function CalendarView({
   familyChildren,
   currentChildId,
   initialToday,
+  breakDates = [],
 }: {
   instances: CalendarInstance[];
   familyChildren: { id: string; label: string; colour: string }[];
   currentChildId: string;
   initialToday: string;
+  breakDates?: string[];
 }) {
   const [selectedDate, setSelectedDate] = useState(initialToday);
   const [viewMode, setViewMode] = useState<ViewMode>("month");
@@ -41,6 +43,8 @@ export default function CalendarView({
     () => filterInstances(instances, childFilter),
     [instances, childFilter]
   );
+
+  const breakDateSet = useMemo(() => new Set(breakDates), [breakDates]);
 
   function navigate(direction: -1 | 1) {
     setSelectedDate((prev) => {
@@ -75,6 +79,7 @@ export default function CalendarView({
         onNavigate={navigate}
         onViewModeChange={setViewMode}
         onToday={() => setSelectedDate(initialToday)}
+        breakDates={breakDateSet}
       />
 
       {selectedInstance && (

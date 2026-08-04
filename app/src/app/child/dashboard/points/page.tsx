@@ -36,7 +36,11 @@ export default async function PointsPage() {
         .select("id, delta, type, description, created_at")
         .eq("child_id", session.childId)
         .order("created_at", { ascending: false }),
-      supabase.from("chore_assignments").select("status").eq("child_id", session.childId),
+      supabase
+      .from("chore_assignments")
+      .select("status")
+      .eq("child_id", session.childId)
+      .is("hidden_by_break_id", null),
       supabase
         .from("chore_freezes")
         .select("id, freeze_from, freeze_to, reason, status")

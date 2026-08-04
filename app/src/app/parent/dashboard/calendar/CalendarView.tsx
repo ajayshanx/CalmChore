@@ -23,10 +23,12 @@ export default function CalendarView({
   instances,
   familyChildren,
   initialToday,
+  breakDaysByChild = [],
 }: {
   instances: CalendarInstance[];
   familyChildren: { id: string; label: string; colour: string }[];
   initialToday: string;
+  breakDaysByChild?: { date: string; childIds: string[] }[];
 }) {
   const [selectedDate, setSelectedDate] = useState(initialToday);
   const [viewMode, setViewMode] = useState<ViewMode>("month");
@@ -39,6 +41,17 @@ export default function CalendarView({
     () => filterInstances(instances, childFilter),
     [instances, childFilter]
   );
+
+  // Only mark a day as a Chore Break if at least one of the currently
+  // filtered-in children has one that day — keeps the marker consistent
+  // with whichever kids' pills are actually showing.
+  const breakDates = useMemo(() => {
+    const set = new Set<string>();
+    for (const day of breakDaysByChild) {
+      if (day.childIds.some((id) => childFilter.has(id))) set.add(day.date);
+    }
+    return set;
+  }, [breakDaysByChild, childFilter]);
 
   function navigate(direction: -1 | 1) {
     setSelectedDate((prev) => {
@@ -74,6 +87,7 @@ export default function CalendarView({
         onNavigate={navigate}
         onViewModeChange={setViewMode}
         onToday={() => setSelectedDate(initialToday)}
+        breakDates={breakDates}
       />
 
       {selectedChild && (

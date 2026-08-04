@@ -5,6 +5,9 @@ import { getTierStatus, getWeeklyFreeFreezeCap } from "@/lib/tiers";
 import { maybeAwardWeeklyStreakBonus } from "@/lib/points/weeklyBonus";
 
 // Resolves each already-passed day for a child as one of:
+//  - "break"   — covered by an active Chore Break for this child; protects
+//                the streak independently of freezes, and (per spec) is not
+//                eligible to also auto-consume a freeze
 //  - "frozen"  — already covered by a parent-approved multi-day freeze
 //  - "empty"   — no chores were due at all (not "required", per spec)
 //  - "good"    — at least one chore validated Complete/Partially Complete
@@ -12,13 +15,23 @@ import { maybeAwardWeeklyStreakBonus } from "@/lib/points/weeklyBonus";
 //                (the child isn't at fault for the delay — stop the walk
 //                here rather than guessing at an outcome)
 //  - "missed"  — chores were due and none were completed or pending review
-type DayClassification = "frozen" | "empty" | "good" | "pending" | "missed";
+type DayClassification = "break" | "frozen" | "empty" | "good" | "pending" | "missed";
 
 async function classifyDay(
   supabase: SupabaseClient,
   childId: string,
   day: string
 ): Promise<DayClassification> {
+  const { data: brk } = await supabase
+    .from("chore_breaks")
+    .select("id, chore_break_children!inner ( child_id )")
+    .eq("status", "active")
+    .eq("chore_break_children.child_id", childId)
+    .lte("start_date", day)
+    .gte("end_date", day)
+    .maybeSingle();
+  if (brk) return "break";
+
   const { data: freeze } = await supabase
     .from("chore_freezes")
     .select("id")
@@ -45,11 +58,17 @@ async function classifyDay(
 
 // Walks a child's streak forward, day by day, from the day after whatever
 // was last resolved through `throughDay` (inclusive) — reconciling gaps with
-// Chore Freezes (auto-applying one per day when the week's free-freeze cap
-// for the child's current tier isn't yet used up) instead of always treating
-// a gap as a broken streak. Chore Breaks aren't built yet, so a day covered
-// by one isn't recognized here — a future addition, same as the freeze-only
-// limitation already noted where this replaced the simpler inline logic.
+// Chore Breaks (checked first, since they protect a day outright) and Chore
+// Freezes (auto-applying one per day when the week's free-freeze cap for the
+// child's current tier isn't yet used up) instead of always treating a gap
+// as a broken streak.
+//
+// Note: if a break is cancelled *after* some of its days have already been
+// walked (i.e. already resolved into last_counted_date), those days won't
+// automatically re-open — there's no cron/replay job in this app, only
+// forward walking from last_counted_date+1. In practice breaks are applied
+// ahead of time, so this only matters for a retroactive cancel of a break
+// covering already-elapsed days, an edge case not handled here.
 //
 // Call this both from the write path (validateChoreAssignment, with
 // throughDay = the chore's scheduled_date) and from read paths that display
@@ -96,7 +115,7 @@ export async function advanceStreakThrough(
       continue;
     }
 
-    if (classification === "good" || classification === "frozen") {
+    if (classification === "good" || classification === "frozen" || classification === "break") {
       currentStreakDays += 1;
       if (!streakStartedDate) streakStartedDate = day;
       lastCountedDate = day;
