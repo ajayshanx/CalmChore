@@ -7,6 +7,7 @@ import AddChildForm from "./AddChildForm";
 import AwardBadgeForm from "@/components/badges/AwardBadgeForm";
 import TimezoneForm from "./TimezoneForm";
 import NotificationsForm from "./NotificationsForm";
+import PrivacyPolicySection from "./PrivacyPolicySection";
 
 type BadgeRow = { id: string; emoji: string; label: string; note: string | null; created_at: string };
 
@@ -57,6 +58,15 @@ export default async function ParentSetupPage() {
         .select("scope, parent_id, action, channel_inapp")
         .eq("family_id", me.family_id),
     ]);
+
+  const { data: consentRows } = await supabase
+    .from("consent_acceptances")
+    .select("version, accepted_at")
+    .eq("parent_id", user.id)
+    .order("accepted_at", { ascending: true });
+
+  const earliestAcceptedAt = consentRows?.[0]?.accepted_at ?? null;
+  const latestAcceptedVersion = consentRows?.length ? consentRows[consentRows.length - 1].version : null;
 
   const otherParents = (allParents ?? []).filter((p) => p.id !== user.id);
 
@@ -182,6 +192,14 @@ export default async function ParentSetupPage() {
       <section>
         <h2 className="mb-3 text-lg font-medium text-calm-green">Notifications</h2>
         <NotificationsForm parentPrefs={parentPrefs} childrenPrefs={childrenPrefs} />
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-lg font-medium text-calm-green">Privacy Policy</h2>
+        <PrivacyPolicySection
+          earliestAcceptedAt={earliestAcceptedAt}
+          latestAcceptedVersion={latestAcceptedVersion}
+        />
       </section>
     </main>
   );

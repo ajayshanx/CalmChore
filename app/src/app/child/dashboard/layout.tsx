@@ -102,6 +102,9 @@ export default async function ChildDashboardLayout({
           <Link href="/child/dashboard/setup" className="hover:underline">
             Setup
           </Link>
+          <Link href="/child/dashboard/about" className="hover:underline">
+            About
+          </Link>
         </nav>
         <div className="flex items-center gap-2">
           <NotificationBell

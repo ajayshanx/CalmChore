@@ -65,6 +65,9 @@ export default async function ParentDashboardLayout({
           <Link href="/parent/dashboard/setup" className="hover:underline">
             Setup
           </Link>
+          <Link href="/parent/dashboard/about" className="hover:underline">
+            About
+          </Link>
         </nav>
         <div className="flex items-center gap-2">
           <NotificationBell
