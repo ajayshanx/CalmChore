@@ -85,7 +85,7 @@ export default function ChoreDetailPopup({
             dotClass: "bg-calm-text/30",
             textClass: "text-calm-text",
           };
-          return { label: meta.label, at: e.occurredAt, reason: e.reason, ...meta };
+          return { at: e.occurredAt, reason: e.reason, ...meta };
         })
       : // Fallback for assignments created before status-event logging
         // existed — reconstructed from the single-row snapshot, so it only
