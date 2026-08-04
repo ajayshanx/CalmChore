@@ -1,11 +1,17 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import { validateChoreAssignment } from "./actions";
 import type { ValidationRow } from "./ValidateView";
 import AwardBadgeForm from "@/components/badges/AwardBadgeForm";
 
 const initialState: { error?: string; success?: boolean } = {};
+
+const OUTCOME_LABELS: Record<string, string> = {
+  verified_complete: "Marked Complete",
+  verified_partially_complete: "Marked Partially Complete",
+  incomplete: "Marked Incomplete",
+};
 
 export default function ValidatePopup({
   row,
@@ -19,16 +25,13 @@ export default function ValidatePopup({
     "verified_complete" | "verified_partially_complete" | "incomplete" | null
   >(null);
 
-  // Same missing-feedback bug as the child-side Accept/Submit popups: without
-  // this, a successful outcome leaves the popup open with no confirmation,
-  // and the assignment (already validated) would error if confirmed again.
-  // Award a badge for this submission before confirming an outcome, if
-  // wanted — the popup closes as soon as the outcome is saved.
-  useEffect(() => {
-    if (state?.success) {
-      onClose();
-    }
-  }, [state?.success, onClose]);
+  // Deliberately does NOT auto-close on a successful outcome (unlike the
+  // child-side Accept/Submit popups) — a parent often wants to award a badge
+  // for this same submission right after confirming the outcome, and an
+  // auto-close would yank the popup away (and the row out of the pending
+  // list) before they get the chance. Instead the outcome picker is replaced
+  // with a confirmation once saved, and the parent closes manually via ✕
+  // whenever they're done — including after awarding a badge below.
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
@@ -63,7 +66,7 @@ export default function ValidatePopup({
           </div>
         </dl>
 
-        {row.photoUrl && (
+        {row.photoUrl && !state?.success && (
           <div className="mb-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -76,90 +79,99 @@ export default function ValidatePopup({
             </p>
           </div>
         )}
+        {row.photoUrl && state?.success && (
+          <p className="mb-4 text-xs text-calm-text/60">Photo deleted, as promised above.</p>
+        )}
 
-        <form action={formAction} className="flex flex-col gap-3">
-          <input type="hidden" name="assignmentId" value={row.assignmentId} />
-
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setOutcome("verified_complete")}
-              className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
-                outcome === "verified_complete"
-                  ? "border-emerald-600 bg-emerald-50 text-emerald-800"
-                  : "border-calm-green/30 text-calm-text/70"
-              }`}
-            >
-              🙂 Completed
-            </button>
-            <button
-              type="button"
-              onClick={() => setOutcome("verified_partially_complete")}
-              className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
-                outcome === "verified_partially_complete"
-                  ? "border-amber-600 bg-amber-50 text-amber-800"
-                  : "border-calm-green/30 text-calm-text/70"
-              }`}
-            >
-              😐 Partially Complete
-            </button>
-            <button
-              type="button"
-              onClick={() => setOutcome("incomplete")}
-              className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
-                outcome === "incomplete"
-                  ? "border-red-600 bg-red-50 text-red-800"
-                  : "border-calm-green/30 text-calm-text/70"
-              }`}
-            >
-              ☹️ Incomplete
-            </button>
+        {state?.success ? (
+          <div className="rounded-lg bg-calm-greenLight px-4 py-3 text-sm font-medium text-calm-green">
+            ✓ {OUTCOME_LABELS[outcome ?? ""] ?? "Saved"} — you can close this or award a badge below.
           </div>
-          <input type="hidden" name="outcome" value={outcome ?? ""} />
+        ) : (
+          <form action={formAction} className="flex flex-col gap-3">
+            <input type="hidden" name="assignmentId" value={row.assignmentId} />
 
-          {outcome === "verified_partially_complete" && (
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-calm-text/70">
-                Awarded Points (out of {row.points})
-              </span>
-              <input
-                name="awardedPoints"
-                type="number"
-                min={0}
-                max={row.points}
-                defaultValue={row.points}
-                required
-                className="w-32 rounded-lg border border-calm-green/30 px-4 py-2"
-              />
-            </label>
-          )}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setOutcome("verified_complete")}
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+                  outcome === "verified_complete"
+                    ? "border-emerald-600 bg-emerald-50 text-emerald-800"
+                    : "border-calm-green/30 text-calm-text/70"
+                }`}
+              >
+                🙂 Completed
+              </button>
+              <button
+                type="button"
+                onClick={() => setOutcome("verified_partially_complete")}
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+                  outcome === "verified_partially_complete"
+                    ? "border-amber-600 bg-amber-50 text-amber-800"
+                    : "border-calm-green/30 text-calm-text/70"
+                }`}
+              >
+                😐 Partially Complete
+              </button>
+              <button
+                type="button"
+                onClick={() => setOutcome("incomplete")}
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+                  outcome === "incomplete"
+                    ? "border-red-600 bg-red-50 text-red-800"
+                    : "border-calm-green/30 text-calm-text/70"
+                }`}
+              >
+                ☹️ Incomplete
+              </button>
+            </div>
+            <input type="hidden" name="outcome" value={outcome ?? ""} />
 
-          {outcome === "incomplete" && (
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-calm-text/70">
-                Reason for non-completion (visible to your child)
-              </span>
-              <textarea
-                name="incompleteReason"
-                required
-                rows={2}
-                className="rounded-lg border border-calm-green/30 px-4 py-2"
-              />
-            </label>
-          )}
+            {outcome === "verified_partially_complete" && (
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-calm-text/70">
+                  Awarded Points (out of {row.points})
+                </span>
+                <input
+                  name="awardedPoints"
+                  type="number"
+                  min={0}
+                  max={row.points}
+                  defaultValue={row.points}
+                  required
+                  className="w-32 rounded-lg border border-calm-green/30 px-4 py-2"
+                />
+              </label>
+            )}
 
-          {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+            {outcome === "incomplete" && (
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-calm-text/70">
+                  Reason for non-completion (visible to your child)
+                </span>
+                <textarea
+                  name="incompleteReason"
+                  required
+                  rows={2}
+                  className="rounded-lg border border-calm-green/30 px-4 py-2"
+                />
+              </label>
+            )}
 
-          {outcome && (
-            <button
-              type="submit"
-              disabled={pending}
-              className="self-start rounded-xl bg-calm-green px-6 py-3 font-medium text-white disabled:opacity-40"
-            >
-              {pending ? "Saving…" : "Confirm"}
-            </button>
-          )}
-        </form>
+            {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+
+            {outcome && (
+              <button
+                type="submit"
+                disabled={pending}
+                className="self-start rounded-xl bg-calm-green px-6 py-3 font-medium text-white disabled:opacity-40"
+              >
+                {pending ? "Saving…" : "Confirm"}
+              </button>
+            )}
+          </form>
+        )}
 
         <div className="mt-4 border-t border-calm-green/15 pt-3">
           <AwardBadgeForm
