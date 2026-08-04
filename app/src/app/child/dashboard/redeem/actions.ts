@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getChildSession } from "@/lib/childSession";
-import { REDEMPTION_CATEGORIES, type RedemptionCategory, type RequestDetails } from "@/lib/redemption";
+import { REDEMPTION_CATEGORIES, CATEGORY_LABELS, type RedemptionCategory, type RequestDetails } from "@/lib/redemption";
+import { notifyAllParents } from "@/lib/notifications";
 
 export async function requestRedemption(_prevState: unknown, formData: FormData) {
   const category = String(formData.get("category") || "") as RedemptionCategory;
@@ -54,6 +55,13 @@ export async function requestRedemption(_prevState: unknown, formData: FormData)
   if (error) {
     return { error: error.message };
   }
+
+  await notifyAllParents(supabase, {
+    familyId: session.familyId,
+    action: "point_redemption",
+    message: `${session.nickname} requested a redemption: ${CATEGORY_LABELS[category]}.`,
+    link: "/parent/dashboard/redemption",
+  });
 
   revalidatePath("/child/dashboard/redeem");
   return { success: true };

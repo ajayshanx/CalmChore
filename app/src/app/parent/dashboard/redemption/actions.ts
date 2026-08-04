@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { CATEGORY_LABELS, formatRequestDetails, type RedemptionCategory } from "@/lib/redemption";
+import { notifyChild } from "@/lib/notifications";
 
 function revalidateAffectedPaths() {
   revalidatePath("/parent/dashboard/redemption");
@@ -30,6 +31,12 @@ export async function approveRedemption(_prevState: unknown, formData: FormData)
   if (!user) {
     return { error: "You must be logged in." };
   }
+
+  const { data: parent } = await supabase
+    .from("parents")
+    .select("family_id")
+    .eq("id", user.id)
+    .maybeSingle();
 
   // RLS (redemption_family) already scopes this to the parent's own family.
   const { data: request } = await supabase
@@ -84,6 +91,16 @@ export async function approveRedemption(_prevState: unknown, formData: FormData)
     return { error: ledgerError.message };
   }
 
+  if (parent?.family_id) {
+    await notifyChild(supabase, {
+      familyId: parent.family_id,
+      childId: request.child_id,
+      action: "point_redemption",
+      message: `Your redemption request was approved: ${categoryLabel} (−${pointsToDebit} pts).`,
+      link: "/child/dashboard/redeem",
+    });
+  }
+
   revalidateAffectedPaths();
   return { success: true };
 }
@@ -107,9 +124,15 @@ export async function rejectRedemption(_prevState: unknown, formData: FormData) 
     return { error: "You must be logged in." };
   }
 
+  const { data: parent } = await supabase
+    .from("parents")
+    .select("family_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
   const { data: request } = await supabase
     .from("redemption_requests")
-    .select("id, status")
+    .select("id, child_id, category, status")
     .eq("id", requestId)
     .maybeSingle();
 
@@ -132,6 +155,17 @@ export async function rejectRedemption(_prevState: unknown, formData: FormData) 
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (parent?.family_id) {
+    const categoryLabel = CATEGORY_LABELS[request.category as RedemptionCategory] ?? request.category;
+    await notifyChild(supabase, {
+      familyId: parent.family_id,
+      childId: request.child_id,
+      action: "point_redemption",
+      message: `Your redemption request was declined: ${categoryLabel}.`,
+      link: "/child/dashboard/redeem",
+    });
   }
 
   revalidateAffectedPaths();

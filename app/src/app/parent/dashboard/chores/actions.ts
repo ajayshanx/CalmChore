@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { generateInstanceDates, type RecurrenceType } from "@/lib/chores/schedule";
+import { notifyChild } from "@/lib/notifications";
 
 const RECURRENCE_TYPES: RecurrenceType[] = ["none", "daily", "weekly", "monthly"];
 
@@ -105,6 +106,32 @@ export async function createChore(_prevState: unknown, formData: FormData) {
     const { error: assignError } = await supabase.from("chore_assignments").insert(assignmentRows);
     if (assignError) {
       return { error: `Chore scheduled, but assignment failed: ${assignError.message}` };
+    }
+
+    for (const childId of assignedTo) {
+      await notifyChild(supabase, {
+        familyId: parent.family_id,
+        childId,
+        action: "chore_assignment",
+        message: `You were assigned a new chore: ${name}.`,
+        link: "/child/dashboard/calendar",
+      });
+    }
+  } else {
+    // Left open for anyone to accept — "chore addition" rather than a
+    // targeted assignment.
+    const { data: familyChildren } = await supabase
+      .from("children")
+      .select("id")
+      .eq("family_id", parent.family_id);
+    for (const child of familyChildren ?? []) {
+      await notifyChild(supabase, {
+        familyId: parent.family_id,
+        childId: child.id,
+        action: "chore_addition",
+        message: `A new chore is available: ${name}.`,
+        link: "/child/dashboard/calendar",
+      });
     }
   }
 

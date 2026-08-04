@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getChildSession } from "@/lib/childSession";
+import { notifyAllParents } from "@/lib/notifications";
 
 export async function submitChoreProof(_prevState: unknown, formData: FormData) {
   const assignmentId = String(formData.get("assignmentId") || "");
@@ -22,7 +23,7 @@ export async function submitChoreProof(_prevState: unknown, formData: FormData) 
   const { data: assignment } = await supabase
     .from("chore_assignments")
     .select(
-      "id, child_id, status, chore_instances ( chores ( family_id, requires_proof ) )"
+      "id, child_id, status, chore_instances ( chores ( name, family_id, requires_proof ) )"
     )
     .eq("id", assignmentId)
     .maybeSingle();
@@ -69,6 +70,13 @@ export async function submitChoreProof(_prevState: unknown, formData: FormData) 
   if (error) {
     return { error: error.message };
   }
+
+  await notifyAllParents(supabase, {
+    familyId: session.familyId,
+    action: "chore_completion",
+    message: `${session.nickname} submitted a chore for review: ${chore?.name ?? "Chore"}.`,
+    link: "/parent/dashboard/validate",
+  });
 
   revalidatePath("/child/dashboard/my-chores");
   return { success: true };

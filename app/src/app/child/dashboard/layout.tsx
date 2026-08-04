@@ -4,6 +4,26 @@ import { getChildSession } from "@/lib/childSession";
 import { createServiceClient } from "@/lib/supabase/service";
 import { todayStrInTimezone } from "@/lib/chores/calendarDates";
 import { getFamilyTimezone } from "@/lib/families";
+import NotificationBell, { type NotificationItem } from "@/components/notifications/NotificationBell";
+import { markChildNotificationRead, markAllChildNotificationsRead } from "./notificationActions";
+
+async function getRecentNotifications(childId: string): Promise<NotificationItem[]> {
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from("notifications")
+    .select("id, message, link, created_at, read_at")
+    .eq("recipient_child_id", childId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    message: row.message,
+    link: row.link,
+    createdAt: row.created_at,
+    readAt: row.read_at,
+  }));
+}
 
 // True if any chore instance relevant to this child (newly added open chores,
 // or chores newly assigned directly to them) was created since they last
@@ -46,6 +66,7 @@ export default async function ChildDashboardLayout({
   const showCalendarBadge = session
     ? await hasNewCalendarActivity(session.childId, session.familyId)
     : false;
+  const notifications = session ? await getRecentNotifications(session.childId) : [];
 
   return (
     <div className="min-h-screen bg-calm-bg">
@@ -76,7 +97,14 @@ export default async function ChildDashboardLayout({
             Setup
           </Link>
         </nav>
-        <LogoutButton />
+        <div className="flex items-center gap-2">
+          <NotificationBell
+            notifications={notifications}
+            markRead={markChildNotificationRead}
+            markAllRead={markAllChildNotificationsRead}
+          />
+          <LogoutButton />
+        </div>
       </header>
       {children}
     </div>

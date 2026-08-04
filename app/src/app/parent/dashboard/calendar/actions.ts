@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { notifyChild } from "@/lib/notifications";
 
 // Adds a child assignment to an instance (turns an unassigned chore into an
 // assigned one, or adds another child to a multi-assignment chore). Doesn't
@@ -26,9 +27,10 @@ export async function assignChildToInstance(_prevState: unknown, formData: FormD
 
   const { data: instance } = await supabase
     .from("chore_instances")
-    .select("scheduled_date")
+    .select("scheduled_date, chores ( name, family_id )")
     .eq("id", instanceId)
     .maybeSingle();
+  const chore = Array.isArray(instance?.chores) ? instance.chores[0] : instance?.chores;
   if (instance?.scheduled_date) {
     const { data: activeBreak } = await supabase
       .from("chore_breaks")
@@ -49,6 +51,16 @@ export async function assignChildToInstance(_prevState: unknown, formData: FormD
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (chore?.family_id) {
+    await notifyChild(supabase, {
+      familyId: chore.family_id,
+      childId,
+      action: "chore_assignment",
+      message: `You were assigned a new chore: ${chore.name ?? "Chore"}.`,
+      link: "/child/dashboard/calendar",
+    });
   }
 
   revalidatePath("/parent/dashboard/calendar");

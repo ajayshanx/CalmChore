@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getChildSession } from "@/lib/childSession";
+import { notifyAllParents } from "@/lib/notifications";
 
 export async function acceptChoreInstance(_prevState: unknown, formData: FormData) {
   const instanceId = String(formData.get("instanceId") || "");
@@ -19,7 +20,7 @@ export async function acceptChoreInstance(_prevState: unknown, formData: FormDat
 
   const { data: instance } = await supabase
     .from("chore_instances")
-    .select("id, chores!inner ( family_id, assignment_type )")
+    .select("id, chores!inner ( name, family_id, assignment_type )")
     .eq("id", instanceId)
     .maybeSingle();
 
@@ -69,6 +70,13 @@ export async function acceptChoreInstance(_prevState: unknown, formData: FormDat
   if (error) {
     return { error: error.message };
   }
+
+  await notifyAllParents(supabase, {
+    familyId: session.familyId,
+    action: "chore_acceptance",
+    message: `${session.nickname} accepted the chore: ${chore.name ?? "Chore"}.`,
+    link: "/parent/dashboard/calendar",
+  });
 
   revalidatePath("/child/dashboard/calendar");
   revalidatePath("/child/dashboard/my-chores");

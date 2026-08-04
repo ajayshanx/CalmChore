@@ -6,6 +6,7 @@ import CancelInviteButton from "./CancelInviteButton";
 import AddChildForm from "./AddChildForm";
 import AwardBadgeForm from "@/components/badges/AwardBadgeForm";
 import TimezoneForm from "./TimezoneForm";
+import NotificationsForm from "./NotificationsForm";
 
 type BadgeRow = { id: string; emoji: string; label: string; note: string | null; created_at: string };
 
@@ -34,7 +35,7 @@ export default async function ParentSetupPage() {
     redirect("/parent/finish-setup");
   }
 
-  const [{ data: allParents }, { data: children }, { data: badgeRows }, { data: family }] =
+  const [{ data: allParents }, { data: children }, { data: badgeRows }, { data: family }, { data: prefRows }] =
     await Promise.all([
       supabase
         .from("parents")
@@ -51,6 +52,10 @@ export default async function ParentSetupPage() {
         .select("id, child_id, emoji, label, note, created_at")
         .order("created_at", { ascending: false }),
       supabase.from("families").select("timezone").eq("id", me.family_id).maybeSingle(),
+      supabase
+        .from("notification_preferences")
+        .select("scope, parent_id, action, channel_inapp")
+        .eq("family_id", me.family_id),
     ]);
 
   const otherParents = (allParents ?? []).filter((p) => p.id !== user.id);
@@ -60,6 +65,16 @@ export default async function ParentSetupPage() {
     const list = badgesByChild.get(row.child_id) ?? [];
     list.push(row);
     badgesByChild.set(row.child_id, list);
+  }
+
+  const parentPrefs: Record<string, boolean> = {};
+  const childrenPrefs: Record<string, boolean> = {};
+  for (const row of prefRows ?? []) {
+    if (row.scope === "parent" && row.parent_id === user.id) {
+      parentPrefs[row.action] = row.channel_inapp;
+    } else if (row.scope === "children") {
+      childrenPrefs[row.action] = row.channel_inapp;
+    }
   }
 
   return (
@@ -162,6 +177,11 @@ export default async function ParentSetupPage() {
             <AddChildForm />
           </div>
         </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-lg font-medium text-calm-green">Notifications</h2>
+        <NotificationsForm parentPrefs={parentPrefs} childrenPrefs={childrenPrefs} />
       </section>
     </main>
   );

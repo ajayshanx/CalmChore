@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { advanceStreakThrough } from "@/lib/points/streakEngine";
+import { notifyChild } from "@/lib/notifications";
 
 type Outcome = "verified_complete" | "verified_partially_complete" | "incomplete";
 
@@ -39,7 +40,7 @@ export async function validateChoreAssignment(_prevState: unknown, formData: For
   const { data: assignment } = await supabase
     .from("chore_assignments")
     .select(
-      "id, status, child_id, proof_photo_url, chore_instances ( scheduled_date, points, chores ( name ) )"
+      "id, status, child_id, proof_photo_url, chore_instances ( scheduled_date, points, chores ( name, family_id ) )"
     )
     .eq("id", assignmentId)
     .maybeSingle();
@@ -100,6 +101,32 @@ export async function validateChoreAssignment(_prevState: unknown, formData: For
       reference_id: assignmentId,
       description: chore?.name ?? "Chore",
     });
+  }
+
+  if (chore?.family_id) {
+    const outcomeText =
+      outcome === "verified_complete"
+        ? "marked complete"
+        : outcome === "verified_partially_complete"
+          ? "marked partially complete"
+          : "marked incomplete";
+    await notifyChild(supabase, {
+      familyId: chore.family_id,
+      childId: assignment.child_id,
+      action: "chore_assessment",
+      message: `Your chore was ${outcomeText}: ${chore.name ?? "Chore"}.`,
+      link: "/child/dashboard/my-chores",
+    });
+
+    if (awardedPoints !== null && awardedPoints > 0) {
+      await notifyChild(supabase, {
+        familyId: chore.family_id,
+        childId: assignment.child_id,
+        action: "point_awarding",
+        message: `You earned ${awardedPoints} point${awardedPoints === 1 ? "" : "s"} for ${chore.name ?? "Chore"}.`,
+        link: "/child/dashboard/points",
+      });
+    }
   }
 
   // A validated Complete or Partially Complete counts as "did a chore" for

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { SITE_URL } from "@/lib/supabase/config";
 import { hashPasscode } from "@/lib/passcode";
+import { notifyAllParents, NOTIFICATION_ACTIONS } from "@/lib/notifications";
 
 export async function inviteParent(_prevState: unknown, formData: FormData) {
   const firstName = String(formData.get("firstName") || "").trim();
@@ -72,6 +73,14 @@ export async function inviteParent(_prevState: unknown, formData: FormData) {
   if (parentInsertError) {
     return { error: parentInsertError.message };
   }
+
+  await notifyAllParents(supabase, {
+    familyId: inviter.family_id,
+    action: "parent_addition",
+    message: `${firstName} ${lastName} was invited to join your family.`,
+    link: "/parent/dashboard/setup",
+    excludeParentId: user.id,
+  });
 
   revalidatePath("/parent/dashboard/setup");
   return { success: true };
@@ -186,6 +195,14 @@ export async function addChild(_prevState: unknown, formData: FormData) {
     }
     return { error: error.message };
   }
+
+  await notifyAllParents(supabase, {
+    familyId: parent.family_id,
+    action: "child_addition",
+    message: `${nickname} was added to the family.`,
+    link: "/parent/dashboard/setup",
+    excludeParentId: user.id,
+  });
 
   revalidatePath("/parent/dashboard/setup");
   revalidatePath("/parent/dashboard");
@@ -332,6 +349,75 @@ export async function resetChildPasscode(_prevState: unknown, formData: FormData
 
   if (error) {
     return { error: error.message };
+  }
+
+  revalidatePath("/parent/dashboard/setup");
+  return { success: true };
+}
+
+// No usable ON CONFLICT target for a bulk upsert here (the "parent" and
+// "children" scope rows are each covered by their own partial unique index,
+// and PostgREST's upsert can't express a partial index's WHERE predicate) —
+// so this checks each of the 24 rows (12 actions x 2 scopes) individually
+// and updates or inserts as needed. Fine for a settings form saved
+// occasionally, not a hot path.
+async function upsertNotificationPreference(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  row: { family_id: string; scope: "parent" | "children"; parent_id: string | null; action: string; channel_inapp: boolean }
+) {
+  let query = supabase
+    .from("notification_preferences")
+    .select("id")
+    .eq("family_id", row.family_id)
+    .eq("scope", row.scope)
+    .eq("action", row.action);
+  query = row.scope === "parent" ? query.eq("parent_id", row.parent_id) : query.is("parent_id", null);
+
+  const { data: existing } = await query.maybeSingle();
+
+  if (existing) {
+    await supabase
+      .from("notification_preferences")
+      .update({ channel_inapp: row.channel_inapp })
+      .eq("id", existing.id);
+  } else {
+    await supabase.from("notification_preferences").insert(row);
+  }
+}
+
+export async function saveNotificationPreferences(_prevState: unknown, formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You must be logged in." };
+  }
+
+  const { data: parent } = await supabase
+    .from("parents")
+    .select("family_id")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!parent) {
+    return { error: "Could not find your family." };
+  }
+
+  for (const action of NOTIFICATION_ACTIONS) {
+    await upsertNotificationPreference(supabase, {
+      family_id: parent.family_id,
+      scope: "parent",
+      parent_id: user.id,
+      action,
+      channel_inapp: formData.get(`parent_${action}`) === "on",
+    });
+    await upsertNotificationPreference(supabase, {
+      family_id: parent.family_id,
+      scope: "children",
+      parent_id: null,
+      action,
+      channel_inapp: formData.get(`children_${action}`) === "on",
+    });
   }
 
   revalidatePath("/parent/dashboard/setup");

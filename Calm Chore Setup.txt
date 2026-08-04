@@ -83,7 +83,7 @@ Childrens' profile section shows:
 - Reset passcode option (per child) - the parent directly enters and saves a new 6-digit passcode; no need to enter or confirm the previous one, and no check that it differs from the old one
 
 Setup --> Notifications:
-This section should have a series of in-app actions and a section where admins (parents) can choose how notifications should be received for those actions separately for parents and children.
+This section should have a series of in-app actions and a section where admins (parents) can choose whether in-app notifications are received for those actions, separately for parents and children. Notifications are in-app only (banner + icon badge) - there is no email channel.
 
 Actions:
 - Parent addition
@@ -99,12 +99,10 @@ Actions:
 - Point redemption
 - Friend addition
 
-Notification options: (checkboxes)
+Notification option: (checkbox)
 - In-app
-- Email (requires a single outbound sending address/service set up for the app, e.g. notifications@[domain] via a transactional email provider such as Resend or SendGrid - see build notes for provider choice)
 
-The above can be selected separately for the current logged in user and for all children on the account.
-For children, only the In-app option exists.
+The above can be selected separately for the current logged in user and for all children on the account (one shared setting per action for "all children", not per individual child).
 
 Setup --> Privacy Policy:
 This shows the full Terms & Conditions and Parental Consent Notice (see "Calm Chore Terms and Conditions.docx") in a plain, readable in-app view - not just at Create Account, but permanently accessible any time a parent wants to check it, since this is reasonably something a parent may want to revisit rather than only see once during signup.
