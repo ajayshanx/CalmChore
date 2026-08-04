@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { addDaysStr } from "@/lib/chores/calendarDates";
 
 type Outcome = "verified_complete" | "verified_partially_complete" | "incomplete";
 
@@ -38,7 +39,7 @@ export async function validateChoreAssignment(_prevState: unknown, formData: For
   const { data: assignment } = await supabase
     .from("chore_assignments")
     .select(
-      "id, status, child_id, proof_photo_url, chore_instances ( points, chores ( name ) )"
+      "id, status, child_id, proof_photo_url, chore_instances ( scheduled_date, points, chores ( name ) )"
     )
     .eq("id", assignmentId)
     .maybeSingle();
@@ -101,6 +102,50 @@ export async function validateChoreAssignment(_prevState: unknown, formData: For
     });
   }
 
+  // A validated Complete or Partially Complete counts as "did a chore" for
+  // that instance's scheduled day, driving the child's streak. Chore
+  // Freezes/Breaks (not built yet) will later cover gap days without
+  // breaking the streak — for now, any gap day resets it.
+  if (outcome === "verified_complete" || outcome === "verified_partially_complete") {
+    const day = instance?.scheduled_date;
+    if (day) {
+      const { data: streak } = await supabase
+        .from("child_streaks")
+        .select("current_streak_days, last_counted_date")
+        .eq("child_id", assignment.child_id)
+        .maybeSingle();
+
+      if (!streak || !streak.last_counted_date) {
+        // First chore this child has ever had validated.
+        await supabase.from("child_streaks").upsert({
+          child_id: assignment.child_id,
+          current_streak_days: 1,
+          streak_started_date: day,
+          last_counted_date: day,
+        });
+      } else if (day === streak.last_counted_date) {
+        // Already credited today via an earlier chore — no-op.
+      } else if (day === addDaysStr(streak.last_counted_date, 1)) {
+        // Consecutive day — extend the streak.
+        await supabase
+          .from("child_streaks")
+          .update({ current_streak_days: streak.current_streak_days + 1, last_counted_date: day })
+          .eq("child_id", assignment.child_id);
+      } else if (day > streak.last_counted_date) {
+        // An uncovered gap (more than a day ahead) breaks the streak and
+        // starts a new one from today.
+        await supabase
+          .from("child_streaks")
+          .update({ current_streak_days: 1, streak_started_date: day, last_counted_date: day })
+          .eq("child_id", assignment.child_id);
+      }
+      // day < last_counted_date: an older/backfilled instance validated
+      // after a later day was already counted — leave the streak as-is.
+    }
+  }
+
   revalidatePath("/parent/dashboard/validate");
+  revalidatePath("/parent/dashboard");
+  revalidatePath("/child/dashboard");
   return { success: true };
 }

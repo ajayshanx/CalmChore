@@ -43,7 +43,7 @@ export default async function ParentDashboardPage() {
 
   const childIds = (children ?? []).map((c) => c.id);
 
-  const [{ data: ledgerRows }, { data: assignmentStatusRows }, { data: ongoingRows }] =
+  const [{ data: ledgerRows }, { data: assignmentStatusRows }, { data: ongoingRows }, { data: streakRows }] =
     await Promise.all([
       childIds.length
         ? supabase.from("points_ledger").select("child_id, delta").in("child_id", childIds)
@@ -59,11 +59,19 @@ export default async function ParentDashboardPage() {
         .in("status", ONGOING_STATUSES)
         .order("created_at", { ascending: false })
         .limit(10),
+      childIds.length
+        ? supabase.from("child_streaks").select("child_id, current_streak_days").in("child_id", childIds)
+        : Promise.resolve({ data: [] as { child_id: string; current_streak_days: number }[] }),
     ]);
 
   const pointsByChild = new Map<string, number>();
   for (const row of ledgerRows ?? []) {
     pointsByChild.set(row.child_id, (pointsByChild.get(row.child_id) ?? 0) + row.delta);
+  }
+
+  const streakByChild = new Map<string, number>();
+  for (const row of streakRows ?? []) {
+    streakByChild.set(row.child_id, row.current_streak_days);
   }
 
   const completedByChild = new Map<string, number>();
@@ -119,7 +127,7 @@ export default async function ParentDashboardPage() {
                   >
                     {label}
                   </span>
-                  <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="grid grid-cols-4 gap-2 text-center">
                     <div>
                       <p className="text-lg font-semibold text-calm-green">
                         {pointsByChild.get(child.id) ?? 0}
@@ -137,6 +145,12 @@ export default async function ParentDashboardPage() {
                         {ongoingByChild.get(child.id) ?? 0}
                       </p>
                       <p className="text-xs text-calm-text/50">Ongoing</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-calm-green">
+                        {streakByChild.get(child.id) ?? 0}
+                      </p>
+                      <p className="text-xs text-calm-text/50">Streak</p>
                     </div>
                   </div>
                 </div>
