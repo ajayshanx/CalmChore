@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import ChoreDetailPopup from "./ChoreDetailPopup";
-import { monthRange, todayStr, weekRange } from "@/lib/chores/calendarDates";
+import { monthRange, weekRange } from "@/lib/chores/calendarDates";
 
 export type MyChoreRow = {
   assignmentId: string;
@@ -44,9 +44,8 @@ const RANGE_OPTIONS: { key: RangeFilter; label: string }[] = [
 // Recurring chores generate up to 60 instances at once, so without a date
 // range the list gets huge — same problem the calendar had before it got
 // Month/Week/Day views.
-function withinRange(dateStr: string, range: RangeFilter): boolean {
+function withinRange(dateStr: string, range: RangeFilter, today: string): boolean {
   if (range === "all") return true;
-  const today = todayStr();
   if (range === "today") return dateStr === today;
   if (range === "week") {
     const [start, end] = weekRange(today);
@@ -56,7 +55,7 @@ function withinRange(dateStr: string, range: RangeFilter): boolean {
   return dateStr >= start && dateStr <= end;
 }
 
-export default function MyChoresView({ chores }: { chores: MyChoreRow[] }) {
+export default function MyChoresView({ chores, today }: { chores: MyChoreRow[]; today: string }) {
   const [tab, setTab] = useState<"ongoing" | "completed">("ongoing");
   const [range, setRange] = useState<RangeFilter>("week");
   const [selected, setSelected] = useState<MyChoreRow | null>(null);
@@ -65,11 +64,11 @@ export default function MyChoresView({ chores }: { chores: MyChoreRow[] }) {
     const byStatus = chores.filter((c) =>
       tab === "ongoing" ? ONGOING_STATUSES.includes(c.status) : COMPLETED_STATUSES.includes(c.status)
     );
-    const byRange = byStatus.filter((c) => withinRange(c.date, range));
+    const byRange = byStatus.filter((c) => withinRange(c.date, range, today));
     return [...byRange].sort((a, b) =>
       tab === "ongoing" ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)
     );
-  }, [chores, tab, range]);
+  }, [chores, tab, range, today]);
 
   return (
     <div>

@@ -192,6 +192,50 @@ export async function addChild(_prevState: unknown, formData: FormData) {
   return { success: true };
 }
 
+export async function updateFamilyTimezone(_prevState: unknown, formData: FormData) {
+  const timezone = String(formData.get("timezone") || "").trim();
+  if (!timezone) {
+    return { error: "Please choose a timezone." };
+  }
+  try {
+    // Throws for an invalid IANA zone name — cheap validation before it
+    // hits every day/week boundary calculation that depends on it.
+    new Intl.DateTimeFormat(undefined, { timeZone: timezone });
+  } catch {
+    return { error: "That doesn't look like a valid timezone." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You must be logged in." };
+  }
+
+  const { data: parent } = await supabase
+    .from("parents")
+    .select("family_id")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!parent) {
+    return { error: "Could not find your family." };
+  }
+
+  // RLS (family_update) already scopes this to the parent's own family.
+  const { error } = await supabase
+    .from("families")
+    .update({ timezone })
+    .eq("id", parent.family_id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/parent/dashboard/setup");
+  return { success: true };
+}
+
 export async function awardBadge(_prevState: unknown, formData: FormData) {
   const childId = String(formData.get("childId") || "");
   const emoji = String(formData.get("emoji") || "").trim();

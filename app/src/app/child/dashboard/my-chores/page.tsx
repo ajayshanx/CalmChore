@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { getChildSession } from "@/lib/childSession";
 import { createServiceClient } from "@/lib/supabase/service";
+import { todayStrInTimezone } from "@/lib/chores/calendarDates";
+import { getFamilyTimezone } from "@/lib/families";
 import MyChoresView, { type MyChoreRow } from "./MyChoresView";
 
 export default async function MyChoresPage() {
@@ -10,6 +12,8 @@ export default async function MyChoresPage() {
   }
 
   const supabase = createServiceClient();
+  const timezone = await getFamilyTimezone(supabase, session.familyId);
+  const today = todayStrInTimezone(timezone);
   const { data: rows } = await supabase
     .from("chore_assignments")
     .select(
@@ -46,7 +50,7 @@ export default async function MyChoresPage() {
   return (
     <main className="mx-auto flex min-h-[calc(100vh-65px)] max-w-2xl flex-col gap-6 px-6 py-10">
       <h1 className="text-2xl font-semibold text-calm-green">My Chores</h1>
-      <MyChoresView chores={myChores} />
+      <MyChoresView chores={myChores} today={today} />
     </main>
   );
 }

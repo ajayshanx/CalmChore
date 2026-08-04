@@ -2,7 +2,8 @@ import Link from "next/link";
 import LogoutButton from "./LogoutButton";
 import { getChildSession } from "@/lib/childSession";
 import { createServiceClient } from "@/lib/supabase/service";
-import { todayStr } from "@/lib/chores/calendarDates";
+import { todayStrInTimezone } from "@/lib/chores/calendarDates";
+import { getFamilyTimezone } from "@/lib/families";
 
 // True if any chore instance relevant to this child (newly added open chores,
 // or chores newly assigned directly to them) was created since they last
@@ -19,11 +20,13 @@ async function hasNewCalendarActivity(childId: string, familyId: string): Promis
   const lastViewedAt = child?.last_calendar_view_at;
   if (!lastViewedAt) return false;
 
+  const timezone = await getFamilyTimezone(supabase, familyId);
+
   const { data: rows } = await supabase
     .from("chore_instances")
     .select("id, created_at, chores!inner ( family_id ), chore_assignments ( child_id )")
     .eq("chores.family_id", familyId)
-    .gte("scheduled_date", todayStr())
+    .gte("scheduled_date", todayStrInTimezone(timezone))
     .gt("created_at", lastViewedAt)
     .limit(50);
 

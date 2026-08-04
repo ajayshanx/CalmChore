@@ -3,7 +3,8 @@ import { getChildSession } from "@/lib/childSession";
 import { createServiceClient } from "@/lib/supabase/service";
 import CalendarView from "./CalendarView";
 import type { CalendarInstance } from "@/components/chores/CalendarGrid";
-import { addDaysStr, todayStr } from "@/lib/chores/calendarDates";
+import { addDaysStr, todayStrInTimezone } from "@/lib/chores/calendarDates";
+import { getFamilyTimezone } from "@/lib/families";
 
 // Same fixed-window approach as the parent calendar: one fetch covers all
 // month/week/day navigation client-side, no per-view round trip.
@@ -30,7 +31,8 @@ export default async function ChildCalendarPage() {
     colour: c.accent_colour ?? "neutral",
   }));
 
-  const today = todayStr();
+  const timezone = await getFamilyTimezone(supabase, session.familyId);
+  const today = todayStrInTimezone(timezone);
   const rangeStart = addDaysStr(today, RANGE_START_OFFSET_DAYS);
   const rangeEnd = addDaysStr(today, RANGE_END_OFFSET_DAYS);
 
@@ -84,6 +86,7 @@ export default async function ChildCalendarPage() {
         instances={instances}
         familyChildren={familyChildren}
         currentChildId={session.childId}
+        initialToday={today}
       />
     </main>
   );

@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import CalendarView from "./CalendarView";
 import type { CalendarInstance } from "@/components/chores/CalendarGrid";
-import { addDaysStr, todayStr } from "@/lib/chores/calendarDates";
+import { addDaysStr, todayStrInTimezone } from "@/lib/chores/calendarDates";
+import { getFamilyTimezone } from "@/lib/families";
 
 // All calendar navigation (month/week/day, prev/next, child filter) happens
 // client-side against one fetch, rather than round-tripping to the server
@@ -44,7 +45,8 @@ export default async function ParentCalendarPage() {
     colour: c.accent_colour ?? "neutral",
   }));
 
-  const today = todayStr();
+  const timezone = await getFamilyTimezone(supabase, parent.family_id);
+  const today = todayStrInTimezone(timezone);
   const rangeStart = addDaysStr(today, RANGE_START_OFFSET_DAYS);
   const rangeEnd = addDaysStr(today, RANGE_END_OFFSET_DAYS);
 
@@ -87,7 +89,7 @@ export default async function ParentCalendarPage() {
   return (
     <main className="mx-auto flex min-h-[calc(100vh-65px)] max-w-3xl flex-col gap-6 px-6 py-10">
       <h1 className="text-2xl font-semibold text-calm-green">Chore Calendar</h1>
-      <CalendarView instances={instances} familyChildren={familyChildren} />
+      <CalendarView instances={instances} familyChildren={familyChildren} initialToday={today} />
     </main>
   );
 }

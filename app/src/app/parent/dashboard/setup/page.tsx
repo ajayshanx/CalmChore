@@ -5,6 +5,7 @@ import ResetPasscodeButton from "./ResetPasscodeButton";
 import CancelInviteButton from "./CancelInviteButton";
 import AddChildForm from "./AddChildForm";
 import AwardBadgeForm from "@/components/badges/AwardBadgeForm";
+import TimezoneForm from "./TimezoneForm";
 
 type BadgeRow = { id: string; emoji: string; label: string; note: string | null; created_at: string };
 
@@ -33,22 +34,24 @@ export default async function ParentSetupPage() {
     redirect("/parent/finish-setup");
   }
 
-  const [{ data: allParents }, { data: children }, { data: badgeRows }] = await Promise.all([
-    supabase
-      .from("parents")
-      .select("id, first_name, last_name, status")
-      .eq("family_id", me.family_id)
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("children")
-      .select("id, username, nickname")
-      .eq("family_id", me.family_id)
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("child_badges")
-      .select("id, child_id, emoji, label, note, created_at")
-      .order("created_at", { ascending: false }),
-  ]);
+  const [{ data: allParents }, { data: children }, { data: badgeRows }, { data: family }] =
+    await Promise.all([
+      supabase
+        .from("parents")
+        .select("id, first_name, last_name, status")
+        .eq("family_id", me.family_id)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("children")
+        .select("id, username, nickname")
+        .eq("family_id", me.family_id)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("child_badges")
+        .select("id, child_id, emoji, label, note, created_at")
+        .order("created_at", { ascending: false }),
+      supabase.from("families").select("timezone").eq("id", me.family_id).maybeSingle(),
+    ]);
 
   const otherParents = (allParents ?? []).filter((p) => p.id !== user.id);
 
@@ -72,6 +75,7 @@ export default async function ParentSetupPage() {
             {me.first_name} {me.last_name}
           </p>
           <p className="text-sm text-calm-text/60">{me.email}</p>
+          <TimezoneForm timezone={family?.timezone || "UTC"} />
         </div>
 
         {otherParents.length > 0 && (

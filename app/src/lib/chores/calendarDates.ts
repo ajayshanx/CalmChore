@@ -6,6 +6,26 @@ export function todayStr(): string {
   return toDateStr(new Date());
 }
 
+// "Today" as understood in a specific IANA timezone (the family's stored
+// timezone — see families.timezone), not the server's own UTC clock. Day/week
+// boundaries are meant to follow the family's timezone regardless of where
+// the server runs or which timezone a child is currently logging in from —
+// see "Timezone" in "Calm Chore Setup.txt". Falls back to server-UTC "today"
+// if the stored value isn't a valid IANA zone.
+export function todayStrInTimezone(timezone: string | null | undefined): string {
+  try {
+    // en-CA formats as YYYY-MM-DD, which lines up with the rest of this file.
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: timezone || "UTC",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  } catch {
+    return todayStr();
+  }
+}
+
 export function addDaysStr(dateStr: string, days: number): string {
   const d = new Date(`${dateStr}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import CalendarGrid, { type CalendarInstance, type ViewMode } from "@/components/chores/CalendarGrid";
 import ChildFilter, { UNASSIGNED_FILTER_KEY } from "@/components/chores/ChildFilter";
-import { addDaysStr, addMonthsStr, todayStr } from "@/lib/chores/calendarDates";
+import { addDaysStr, addMonthsStr } from "@/lib/chores/calendarDates";
 import ChorePopup from "./ChorePopup";
 
 function filterInstances(instances: CalendarInstance[], selected: Set<string>): CalendarInstance[] {
@@ -22,11 +22,13 @@ function filterInstances(instances: CalendarInstance[], selected: Set<string>): 
 export default function CalendarView({
   instances,
   familyChildren,
+  initialToday,
 }: {
   instances: CalendarInstance[];
   familyChildren: { id: string; label: string; colour: string }[];
+  initialToday: string;
 }) {
-  const [selectedDate, setSelectedDate] = useState(todayStr());
+  const [selectedDate, setSelectedDate] = useState(initialToday);
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [selectedChild, setSelectedChild] = useState<CalendarInstance | null>(null);
   const [childFilter, setChildFilter] = useState<Set<string>>(
@@ -68,10 +70,10 @@ export default function CalendarView({
         viewMode={viewMode}
         selectedDate={selectedDate}
         instances={filteredInstances}
-        onSelect={setSelectedChild}
+        onSelect={handleSelect}
         onNavigate={navigate}
         onViewModeChange={setViewMode}
-        onToday={() => setSelectedDate(todayStr())}
+        onToday={() => setSelectedDate(initialToday)}
       />
 
       {selectedChild && (
