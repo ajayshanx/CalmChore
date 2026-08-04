@@ -111,7 +111,7 @@ export default async function ParentDashboardPage() {
           Welcome back, {parent.first_name}
         </h1>
         <p className="mt-2 text-calm-text/70">
-          Points Redemption, Child Progress detail, and About are built next.
+          Friends, Feedback, Notifications, and Child Progress detail are built next.
         </p>
       </div>
 

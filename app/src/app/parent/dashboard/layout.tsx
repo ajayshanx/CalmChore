@@ -25,6 +25,9 @@ export default function ParentDashboardLayout({
           <Link href="/parent/dashboard/breaks" className="hover:underline">
             Chore Breaks
           </Link>
+          <Link href="/parent/dashboard/redemption" className="hover:underline">
+            Points Redemption
+          </Link>
           <Link href="/parent/dashboard/setup" className="hover:underline">
             Setup
           </Link>
