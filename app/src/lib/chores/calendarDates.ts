@@ -47,6 +47,17 @@ export function weekRange(dateStr: string): [string, string] {
   return [start, end];
 }
 
+// Monday of the Mon-Sun week containing dateStr — deliberately separate from
+// weekRange() above (which is Sunday-start, for the Calendar UI). The Weekly
+// Streak Bonus and Chore Freeze weekly cap are both explicitly spec'd
+// against a Monday-Sunday week ("Child Login Options.txt"), independent of
+// how the calendar displays weeks.
+export function mondayWeekStart(dateStr: string): string {
+  const weekday = new Date(`${dateStr}T00:00:00Z`).getUTCDay(); // 0=Sun..6=Sat
+  const offsetFromMonday = weekday === 0 ? 6 : weekday - 1;
+  return addDaysStr(dateStr, -offsetFromMonday);
+}
+
 export function monthRange(dateStr: string): [string, string] {
   const d = new Date(`${dateStr}T00:00:00Z`);
   const year = d.getUTCFullYear();

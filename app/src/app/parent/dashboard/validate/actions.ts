@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { addDaysStr } from "@/lib/chores/calendarDates";
-import { maybeAwardWeeklyStreakBonus } from "@/lib/points/weeklyBonus";
+import { advanceStreakThrough } from "@/lib/points/streakEngine";
 
 type Outcome = "verified_complete" | "verified_partially_complete" | "incomplete";
 
@@ -104,78 +103,80 @@ export async function validateChoreAssignment(_prevState: unknown, formData: For
   }
 
   // A validated Complete or Partially Complete counts as "did a chore" for
-  // that instance's scheduled day, driving the child's streak. Chore
-  // Freezes/Breaks (not built yet) will later cover gap days without
-  // breaking the streak — for now, any gap day resets it.
+  // that instance's scheduled day, driving the child's streak. The engine
+  // also reconciles any earlier unresolved gap days along the way — via an
+  // automatic Chore Freeze where the week's free-freeze cap allows it, or a
+  // genuine break where it doesn't — and posts the Weekly Streak Bonus for
+  // any Mon-Sun week that turns out complete as a result.
   if (outcome === "verified_complete" || outcome === "verified_partially_complete") {
     const day = instance?.scheduled_date;
     if (day) {
-      const { data: streak } = await supabase
-        .from("child_streaks")
-        .select("current_streak_days, last_counted_date, streak_started_date")
-        .eq("child_id", assignment.child_id)
-        .maybeSingle();
-
-      // Tracks the day (if any) that just got newly locked into the streak
-      // this call, and the streak's start date as of right after that — used
-      // below to check Weekly Streak Bonus eligibility. Left null for a
-      // same-day no-op or an ignored older backfill, since neither of those
-      // just completed a week.
-      let streakExtendedTo: string | null = null;
-      let effectiveStreakStartedDate: string | null = null;
-
-      if (!streak || !streak.last_counted_date) {
-        // First chore this child has ever had validated.
-        await supabase.from("child_streaks").upsert({
-          child_id: assignment.child_id,
-          current_streak_days: 1,
-          streak_started_date: day,
-          last_counted_date: day,
-        });
-        streakExtendedTo = day;
-        effectiveStreakStartedDate = day;
-      } else if (day === streak.last_counted_date) {
-        // Already credited today via an earlier chore — no-op.
-      } else if (day === addDaysStr(streak.last_counted_date, 1)) {
-        // Consecutive day — extend the streak.
-        await supabase
-          .from("child_streaks")
-          .update({ current_streak_days: streak.current_streak_days + 1, last_counted_date: day })
-          .eq("child_id", assignment.child_id);
-        streakExtendedTo = day;
-        effectiveStreakStartedDate = streak.streak_started_date;
-      } else if (day > streak.last_counted_date) {
-        // An uncovered gap (more than a day ahead) breaks the streak and
-        // starts a new one from today.
-        await supabase
-          .from("child_streaks")
-          .update({ current_streak_days: 1, streak_started_date: day, last_counted_date: day })
-          .eq("child_id", assignment.child_id);
-        streakExtendedTo = day;
-        effectiveStreakStartedDate = day;
-      }
-      // day < last_counted_date: an older/backfilled instance validated
-      // after a later day was already counted — leave the streak as-is.
-
-      // A Mon-Sun week can only have just become "complete" the moment its
-      // Sunday gets locked into an unbroken streak — see weeklyBonus.ts.
-      if (
-        streakExtendedTo &&
-        effectiveStreakStartedDate &&
-        new Date(`${streakExtendedTo}T00:00:00Z`).getUTCDay() === 0
-      ) {
-        await maybeAwardWeeklyStreakBonus(
-          supabase,
-          assignment.child_id,
-          streakExtendedTo,
-          effectiveStreakStartedDate
-        );
-      }
+      await advanceStreakThrough(supabase, assignment.child_id, day);
     }
   }
 
   revalidatePath("/parent/dashboard/validate");
   revalidatePath("/parent/dashboard");
   revalidatePath("/child/dashboard");
+  return { success: true };
+}
+
+type FreezeDecision = "approved" | "declined";
+
+export async function decideFreezeRequest(_prevState: unknown, formData: FormData) {
+  const freezeId = String(formData.get("freezeId") || "");
+  const decision = String(formData.get("decision") || "") as FreezeDecision;
+  const declineReason = String(formData.get("declineReason") || "").trim();
+
+  if (!freezeId) {
+    return { error: "Missing request." };
+  }
+  if (!["approved", "declined"].includes(decision)) {
+    return { error: "Invalid decision." };
+  }
+  if (decision === "declined" && !declineReason) {
+    return { error: "Please enter a reason for declining." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You must be logged in." };
+  }
+
+  // RLS (chore_freezes_family) already scopes this to the parent's own
+  // family via the child_id join — this select doubles as the authorization
+  // check, same pattern as validateChoreAssignment above.
+  const { data: freeze } = await supabase
+    .from("chore_freezes")
+    .select("id, status")
+    .eq("id", freezeId)
+    .maybeSingle();
+
+  if (!freeze) {
+    return { error: "Freeze request not found." };
+  }
+  if (freeze.status !== "pending") {
+    return { error: "This request has already been decided." };
+  }
+
+  const { error } = await supabase
+    .from("chore_freezes")
+    .update({
+      status: decision,
+      reason: decision === "declined" ? declineReason : undefined,
+      decided_by_parent_id: user.id,
+      decided_at: new Date().toISOString(),
+    })
+    .eq("id", freezeId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/parent/dashboard/validate");
+  revalidatePath("/child/dashboard/points");
   return { success: true };
 }

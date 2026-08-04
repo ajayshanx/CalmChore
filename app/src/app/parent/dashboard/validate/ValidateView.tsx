@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import ValidatePopup from "./ValidatePopup";
+import FreezeRequestCard from "./FreezeRequestCard";
 
 export type ValidationRow = {
   assignmentId: string;
@@ -15,11 +16,39 @@ export type ValidationRow = {
   photoUrl: string | null;
 };
 
-export default function ValidateView({ pending }: { pending: ValidationRow[] }) {
+export type FreezeRequestRow = {
+  freezeId: string;
+  childLabel: string;
+  freezeFrom: string;
+  freezeTo: string;
+  reason: string | null;
+  requestedAt: string | null;
+};
+
+export default function ValidateView({
+  pending,
+  freezeRequests,
+}: {
+  pending: ValidationRow[];
+  freezeRequests: FreezeRequestRow[];
+}) {
   const [selected, setSelected] = useState<ValidationRow | null>(null);
 
   return (
-    <div>
+    <div className="flex flex-col gap-6">
+      {freezeRequests.length > 0 && (
+        <div>
+          <p className="mb-2 text-sm font-medium text-calm-text/70">Freeze Requests</p>
+          <ul className="flex flex-col gap-2">
+            {freezeRequests.map((row) => (
+              <li key={row.freezeId}>
+                <FreezeRequestCard row={row} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {pending.length > 0 ? (
         <ul className="flex flex-col gap-2">
           {pending.map((row) => (

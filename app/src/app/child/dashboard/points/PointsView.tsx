@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { tierChipClass, type TierStatus } from "@/lib/tiers";
+import RequestFreezeForm from "./RequestFreezeForm";
+import CancelFreezeButton from "./CancelFreezeButton";
 
 export type LedgerRow = {
   id: string;
@@ -11,12 +13,42 @@ export type LedgerRow = {
   createdAt: string;
 };
 
+export type FreezeRow = {
+  id: string;
+  freezeFrom: string;
+  freezeTo: string;
+  reason: string | null;
+  status: string;
+};
+
 const TYPE_LABELS: Record<string, string> = {
   chore_award: "Chore",
   weekly_streak_bonus: "Weekly Streak Bonus",
   redemption_debit: "Redemption",
   manual_adjustment: "Adjustment",
 };
+
+const FREEZE_STATUS_LABELS: Record<string, string> = {
+  auto_applied: "Auto-Applied",
+  approved: "Approved",
+  pending: "Pending",
+  declined: "Declined",
+};
+
+const FREEZE_STATUS_CLASSES: Record<string, string> = {
+  auto_applied: "bg-sky-100 text-sky-800",
+  approved: "bg-emerald-100 text-emerald-800",
+  pending: "bg-amber-100 text-amber-800",
+  declined: "bg-red-100 text-red-800",
+};
+
+function formatFreezeDate(dateStr: string) {
+  return new Date(`${dateStr}T00:00:00Z`).toLocaleDateString(undefined, {
+    timeZone: "UTC",
+    month: "short",
+    day: "numeric",
+  });
+}
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
@@ -33,12 +65,14 @@ export default function PointsView({
   totalPoints,
   tier,
   ledger,
+  freezes,
 }: {
   totalCompleted: number;
   totalOngoing: number;
   totalPoints: number;
   tier: TierStatus;
   ledger: LedgerRow[];
+  freezes: FreezeRow[];
 }) {
   const [tab, setTab] = useState<"points" | "freezes">("points");
 
@@ -59,9 +93,49 @@ export default function PointsView({
       </div>
 
       {tab === "freezes" ? (
-        <p className="text-sm text-calm-text/60">
-          Chore Freezes are coming soon — this is where automatic and requested freezes will show up.
-        </p>
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-calm-text/60">
+            A freeze protects your streak on a day you couldn&apos;t get to your chores. One is
+            used automatically when a day is missed, if your tier still has one free for the
+            week — otherwise your streak resets. You can also ask a parent for a multi-day
+            freeze ahead of time.
+          </p>
+
+          <RequestFreezeForm />
+
+          {freezes.length > 0 ? (
+            <ul className="flex flex-col gap-1.5">
+              {freezes.map((freeze) => (
+                <li
+                  key={freeze.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-calm-green/15 bg-white px-3 py-2 text-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium">
+                      {formatFreezeDate(freeze.freezeFrom)}
+                      {freeze.freezeFrom !== freeze.freezeTo ? ` – ${formatFreezeDate(freeze.freezeTo)}` : ""}
+                    </p>
+                    {freeze.reason && (
+                      <p className="truncate text-xs text-calm-text/50">{freeze.reason}</p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                        FREEZE_STATUS_CLASSES[freeze.status] ?? "bg-calm-bg text-calm-text/60"
+                      }`}
+                    >
+                      {FREEZE_STATUS_LABELS[freeze.status] ?? freeze.status}
+                    </span>
+                    {freeze.status === "pending" && <CancelFreezeButton freezeId={freeze.id} />}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-calm-text/60">No freezes yet.</p>
+          )}
+        </div>
       ) : (
         <div className="flex flex-col gap-6">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

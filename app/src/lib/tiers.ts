@@ -54,6 +54,14 @@ export function tierChipClass(tierName: string): string {
   return TIER_STYLE[tierName] ?? TIER_STYLE.Rook;
 }
 
+// "Rook through Legend: 1 free freeze per week. Master through Demigod: 2
+// free freezes per week." (see "Child Login Options.txt" — Chore Freezes).
+export function getWeeklyFreeFreezeCap(tierName: string): number {
+  const index = TIERS.findIndex((t) => t.name === tierName);
+  const legendIndex = TIERS.findIndex((t) => t.name === "Legend");
+  return index >= 0 && index <= legendIndex ? 1 : 2;
+}
+
 export type TierStatus = {
   tierName: string;
   level: 1 | 2 | 3;

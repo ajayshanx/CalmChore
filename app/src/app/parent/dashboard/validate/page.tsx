@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import ValidateView, { type ValidationRow } from "./ValidateView";
+import ValidateView, { type ValidationRow, type FreezeRequestRow } from "./ValidateView";
 
 export default async function ValidatePage() {
   const supabase = await createClient();
@@ -23,15 +23,22 @@ export default async function ValidatePage() {
     redirect("/parent/finish-setup");
   }
 
-  const { data: rows } = await supabase
-    .from("chore_assignments")
-    .select(
-      `id, child_id, submitted_at, proof_photo_url,
-       chore_instances ( id, deadline_at, points, chores ( name ) ),
-       children ( nickname, username )`
-    )
-    .eq("status", "unverified")
-    .order("submitted_at", { ascending: true });
+  const [{ data: rows }, { data: freezeRows }] = await Promise.all([
+    supabase
+      .from("chore_assignments")
+      .select(
+        `id, child_id, submitted_at, proof_photo_url,
+         chore_instances ( id, deadline_at, points, chores ( name ) ),
+         children ( nickname, username )`
+      )
+      .eq("status", "unverified")
+      .order("submitted_at", { ascending: true }),
+    supabase
+      .from("chore_freezes")
+      .select("id, freeze_from, freeze_to, reason, requested_at, children ( nickname, username )")
+      .eq("status", "pending")
+      .order("requested_at", { ascending: true }),
+  ]);
 
   // Signed URLs need the service-role client (the bucket has no policies
   // for the authenticated role) — safe here because the rows above are
@@ -65,10 +72,22 @@ export default async function ValidatePage() {
     })
   );
 
+  const freezeRequests: FreezeRequestRow[] = (freezeRows ?? []).map((row) => {
+    const child = Array.isArray(row.children) ? row.children[0] : row.children;
+    return {
+      freezeId: row.id,
+      childLabel: child?.nickname || child?.username || "Child",
+      freezeFrom: row.freeze_from,
+      freezeTo: row.freeze_to,
+      reason: row.reason,
+      requestedAt: row.requested_at,
+    };
+  });
+
   return (
     <main className="mx-auto flex min-h-[calc(100vh-65px)] max-w-2xl flex-col gap-6 px-6 py-10">
       <h1 className="text-2xl font-semibold text-calm-green">Validate Chores</h1>
-      <ValidateView pending={pending} />
+      <ValidateView pending={pending} freezeRequests={freezeRequests} />
     </main>
   );
 }

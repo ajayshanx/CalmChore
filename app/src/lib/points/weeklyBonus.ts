@@ -1,17 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { addDaysStr } from "@/lib/chores/calendarDates";
-
-// The Weekly Streak Bonus is explicitly spec'd against a Monday-Sunday week
-// ("Child Login Options.txt"), which is deliberately different from the
-// Sunday-start week the Calendar UI uses for display (see weekRange() in
-// calendarDates.ts) — keep these separate rather than repurposing one for
-// the other.
-function mondayWeekStart(dateStr: string): string {
-  const weekday = new Date(`${dateStr}T00:00:00Z`).getUTCDay(); // 0=Sun..6=Sat
-  const offsetFromMonday = weekday === 0 ? 6 : weekday - 1;
-  return addDaysStr(dateStr, -offsetFromMonday);
-}
+import { mondayWeekStart } from "@/lib/chores/calendarDates";
 
 // Call whenever a child's streak has just been extended to cover a Sunday —
 // that's the only moment a Mon-Sun week can have just become "complete".
