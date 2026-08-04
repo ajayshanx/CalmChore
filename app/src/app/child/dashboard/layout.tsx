@@ -66,6 +66,9 @@ export default async function ChildDashboardLayout({
           <Link href="/child/dashboard/my-chores" className="hover:underline">
             My Chores
           </Link>
+          <Link href="/child/dashboard/points" className="hover:underline">
+            Points
+          </Link>
           <Link href="/child/dashboard/setup" className="hover:underline">
             Setup
           </Link>

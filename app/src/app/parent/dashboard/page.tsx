@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { pillClass } from "@/lib/chores/calendarColours";
+import { tierChipClass, getTierStatus } from "@/lib/tiers";
 
 const ONGOING_STATUSES = ["assigned", "accepted", "unverified", "incomplete"];
 const COMPLETED_STATUSES = ["verified_complete", "verified_partially_complete"];
@@ -105,7 +106,7 @@ export default async function ParentDashboardPage() {
           Welcome back, {parent.first_name}
         </h1>
         <p className="mt-2 text-calm-text/70">
-          Points Redemption, Chore Breaks, Child Progress detail, and About are built next.
+          Chore Freezes, Points Redemption, Chore Breaks, Child Progress detail, and About are built next.
         </p>
       </div>
 
@@ -115,6 +116,7 @@ export default async function ParentDashboardPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             {children.map((child) => {
               const label = child.nickname || child.username || "Unnamed child";
+              const tier = getTierStatus(streakByChild.get(child.id) ?? 0);
               return (
                 <div
                   key={child.id}
@@ -152,6 +154,13 @@ export default async function ParentDashboardPage() {
                       </p>
                       <p className="text-xs text-calm-text/50">Streak</p>
                     </div>
+                  </div>
+                  <div
+                    className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${tierChipClass(
+                      tier.tierName
+                    )}`}
+                  >
+                    🛡️ {tier.tierName} · Level {tier.level}
                   </div>
                 </div>
               );

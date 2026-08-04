@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getChildSession } from "@/lib/childSession";
 import { createServiceClient } from "@/lib/supabase/service";
 import { pillClass } from "@/lib/chores/calendarColours";
+import { tierChipClass, getTierStatus } from "@/lib/tiers";
 import ProfileForm from "./ProfileForm";
 
 export default async function ChildSetupPage() {
@@ -11,11 +12,20 @@ export default async function ChildSetupPage() {
   }
 
   const supabase = createServiceClient();
-  const { data: badges } = await supabase
-    .from("child_badges")
-    .select("id, emoji, label, note, created_at")
-    .eq("child_id", session.childId)
-    .order("created_at", { ascending: false });
+  const [{ data: badges }, { data: streak }] = await Promise.all([
+    supabase
+      .from("child_badges")
+      .select("id, emoji, label, note, created_at")
+      .eq("child_id", session.childId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("child_streaks")
+      .select("current_streak_days")
+      .eq("child_id", session.childId)
+      .maybeSingle(),
+  ]);
+
+  const tier = getTierStatus(streak?.current_streak_days ?? 0);
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-65px)] max-w-md flex-col gap-6 px-6 py-10">
@@ -23,6 +33,9 @@ export default async function ChildSetupPage() {
       <section>
         <h2 className="mb-3 text-lg font-medium text-calm-green">My Profile</h2>
         <ProfileForm nickname={session.nickname} accentColour={session.accentColour} />
+        <div className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium ${tierChipClass(tier.tierName)}`}>
+          🛡️ {tier.tierName} · Level {tier.level}
+        </div>
       </section>
 
       <section>
