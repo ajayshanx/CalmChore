@@ -1,5 +1,5 @@
-import Link from "next/link";
 import LogoutButton from "./LogoutButton";
+import ChildNavMenu from "./ChildNavMenu";
 import { getChildSession } from "@/lib/childSession";
 import { createServiceClient } from "@/lib/supabase/service";
 import { todayStrInTimezone } from "@/lib/chores/calendarDates";
@@ -71,41 +71,7 @@ export default async function ChildDashboardLayout({
   return (
     <div className="min-h-screen bg-calm-bg">
       <header className="flex items-center justify-between border-b border-calm-green/15 bg-white px-6 py-4">
-        <nav className="flex gap-5 text-sm font-medium text-calm-green">
-          <Link href="/child/dashboard" className="hover:underline">
-            Home
-          </Link>
-          <Link href="/child/dashboard/calendar" className="inline-flex items-center gap-1 hover:underline">
-            Calendar
-            {showCalendarBadge && (
-              <span
-                className="h-2 w-2 rounded-full bg-red-500"
-                title="New chores since you last checked"
-              />
-            )}
-          </Link>
-          <Link href="/child/dashboard/my-chores" className="hover:underline">
-            My Chores
-          </Link>
-          <Link href="/child/dashboard/points" className="hover:underline">
-            Points
-          </Link>
-          <Link href="/child/dashboard/redeem" className="hover:underline">
-            Redeem Points
-          </Link>
-          <Link href="/child/dashboard/friends" className="hover:underline">
-            My Friends
-          </Link>
-          <Link href="/child/dashboard/feedback" className="hover:underline">
-            Feedback
-          </Link>
-          <Link href="/child/dashboard/setup" className="hover:underline">
-            Setup
-          </Link>
-          <Link href="/child/dashboard/about" className="hover:underline">
-            About
-          </Link>
-        </nav>
+        <ChildNavMenu showCalendarBadge={showCalendarBadge} />
         <div className="flex items-center gap-2">
           <NotificationBell
             notifications={notifications}
