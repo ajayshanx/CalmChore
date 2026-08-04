@@ -45,12 +45,20 @@ export async function assignChildToInstance(_prevState: unknown, formData: FormD
     }
   }
 
-  const { error } = await supabase
+  const { data: newAssignment, error } = await supabase
     .from("chore_assignments")
-    .insert({ chore_instance_id: instanceId, child_id: childId, status: "assigned" });
+    .insert({ chore_instance_id: instanceId, child_id: childId, status: "assigned" })
+    .select("id")
+    .single();
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (newAssignment) {
+    await supabase
+      .from("chore_status_events")
+      .insert({ chore_assignment_id: newAssignment.id, event_type: "assigned" });
   }
 
   if (chore?.family_id) {

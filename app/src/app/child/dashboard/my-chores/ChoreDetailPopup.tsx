@@ -24,6 +24,35 @@ const OUTCOME_STYLE: Record<string, string> = {
   incomplete: "text-red-700",
 };
 
+type TimelineEntry = {
+  label: string;
+  at: string;
+  reason?: string | null;
+  dotClass: string;
+  textClass: string;
+};
+
+// Same 6 event types logged to chore_status_events — see that table's
+// migration for why this exists (a single assignment row's snapshot
+// timestamps get overwritten on every incomplete -> resubmit cycle, so they
+// can't show "what has happened over time" across more than one cycle).
+const EVENT_META: Record<string, { label: string; dotClass: string; textClass: string }> = {
+  assigned: { label: "Assigned", dotClass: "bg-calm-text/30", textClass: "text-calm-text" },
+  accepted: { label: "Accepted", dotClass: "bg-calm-green", textClass: "text-calm-text" },
+  submitted: { label: "Submitted for verification", dotClass: "bg-calm-green", textClass: "text-calm-text" },
+  validated_complete: {
+    label: "Verified Complete",
+    dotClass: "bg-emerald-600",
+    textClass: "text-emerald-700",
+  },
+  validated_partial: {
+    label: "Verified Partially Complete",
+    dotClass: "bg-amber-600",
+    textClass: "text-amber-700",
+  },
+  validated_incomplete: { label: "Incomplete", dotClass: "bg-red-600", textClass: "text-red-700" },
+};
+
 export default function ChoreDetailPopup({
   chore,
   onClose,
@@ -48,12 +77,52 @@ export default function ChoreDetailPopup({
     }
   }, [state?.success, onClose]);
 
-  const timeline: { label: string; at: string }[] = [];
-  if (chore.acceptedAt) timeline.push({ label: "Accepted", at: chore.acceptedAt });
-  if (chore.submittedAt) timeline.push({ label: "Submitted for verification", at: chore.submittedAt });
-  if (chore.validatedAt) timeline.push({ label: STATUS_LABELS[chore.status] ?? "Reviewed", at: chore.validatedAt });
-  if (chore.deadlineAt && new Date(chore.deadlineAt) > new Date()) {
-    timeline.push({ label: "Deadline", at: chore.deadlineAt });
+  const timeline: TimelineEntry[] =
+    chore.events.length > 0
+      ? chore.events.map((e) => {
+          const meta = EVENT_META[e.type] ?? {
+            label: e.type,
+            dotClass: "bg-calm-text/30",
+            textClass: "text-calm-text",
+          };
+          return { label: meta.label, at: e.occurredAt, reason: e.reason, ...meta };
+        })
+      : // Fallback for assignments created before status-event logging
+        // existed — reconstructed from the single-row snapshot, so it only
+        // reflects the most recent cycle rather than full history.
+        [
+          chore.acceptedAt && {
+            label: "Accepted",
+            at: chore.acceptedAt,
+            dotClass: "bg-calm-green",
+            textClass: "text-calm-text",
+          },
+          chore.submittedAt && {
+            label: "Submitted for verification",
+            at: chore.submittedAt,
+            dotClass: "bg-calm-green",
+            textClass: "text-calm-text",
+          },
+          chore.validatedAt && {
+            label: STATUS_LABELS[chore.status] ?? "Reviewed",
+            at: chore.validatedAt,
+            reason: chore.incompleteReason,
+            dotClass: "bg-calm-text/50",
+            textClass: OUTCOME_STYLE[chore.status] ?? "text-calm-text",
+          },
+        ].filter((e): e is TimelineEntry => Boolean(e));
+
+  // "If there is a deadline to the chore, this should be pre-populated on
+  // the timeline (in the future if it has not yet passed)" — shown at its
+  // chronological position, styled distinctly while still upcoming.
+  if (chore.deadlineAt) {
+    const isUpcoming = new Date(chore.deadlineAt) > new Date();
+    timeline.push({
+      label: isUpcoming ? "Deadline (upcoming)" : "Deadline",
+      at: chore.deadlineAt,
+      dotClass: isUpcoming ? "bg-calm-text/20" : "bg-calm-text/40",
+      textClass: isUpcoming ? "italic text-calm-text/50" : "text-calm-text/70",
+    });
   }
   timeline.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
 
@@ -110,15 +179,28 @@ export default function ChoreDetailPopup({
 
         {timeline.length > 0 && (
           <div className="mb-4">
-            <p className="mb-1 text-sm font-medium text-calm-text/70">Timeline</p>
-            <ul className="flex flex-col gap-1 text-sm">
+            <p className="mb-2 text-sm font-medium text-calm-text/70">Timeline</p>
+            <ol className="flex flex-col">
               {timeline.map((t, i) => (
-                <li key={i} className="flex justify-between">
-                  <span>{t.label}</span>
-                  <span className="text-calm-text/60">{new Date(t.at).toLocaleString()}</span>
+                <li key={i} className="relative flex gap-3 pb-4 last:pb-0">
+                  {i < timeline.length - 1 && (
+                    <span className="absolute left-[4.5px] top-3 h-full w-px bg-calm-green/15" />
+                  )}
+                  <span
+                    className={`relative z-10 mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${t.dotClass}`}
+                  />
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+                      <span className={`text-sm font-medium ${t.textClass}`}>{t.label}</span>
+                      <span className="text-xs text-calm-text/50">
+                        {new Date(t.at).toLocaleString()}
+                      </span>
+                    </div>
+                    {t.reason && <p className="mt-0.5 text-xs text-calm-text/60">{t.reason}</p>}
+                  </div>
                 </li>
               ))}
-            </ul>
+            </ol>
           </div>
         )}
 

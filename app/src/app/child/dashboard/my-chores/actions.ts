@@ -71,6 +71,10 @@ export async function submitChoreProof(_prevState: unknown, formData: FormData) 
     return { error: error.message };
   }
 
+  await supabase
+    .from("chore_status_events")
+    .insert({ chore_assignment_id: assignmentId, event_type: "submitted" });
+
   await notifyAllParents(supabase, {
     familyId: session.familyId,
     action: "chore_completion",

@@ -106,9 +106,17 @@ export async function createChore(_prevState: unknown, formData: FormData) {
         status: "assigned" as const,
       }))
     );
-    const { error: assignError } = await supabase.from("chore_assignments").insert(assignmentRows);
+    const { data: newAssignments, error: assignError } = await supabase
+      .from("chore_assignments")
+      .insert(assignmentRows)
+      .select("id");
     if (assignError) {
       return { error: `Chore scheduled, but assignment failed: ${assignError.message}` };
+    }
+    if (newAssignments && newAssignments.length > 0) {
+      await supabase.from("chore_status_events").insert(
+        newAssignments.map((a) => ({ chore_assignment_id: a.id, event_type: "assigned" as const }))
+      );
     }
 
     for (const childId of assignedTo) {
@@ -308,15 +316,23 @@ export async function addChoreInstance(_prevState: unknown, formData: FormData) 
   }
 
   if (assignedTo.length > 0) {
-    const { error: assignError } = await supabase.from("chore_assignments").insert(
-      assignedTo.map((childId) => ({
-        chore_instance_id: instance.id,
-        child_id: childId,
-        status: "assigned" as const,
-      }))
-    );
+    const { data: newAssignments, error: assignError } = await supabase
+      .from("chore_assignments")
+      .insert(
+        assignedTo.map((childId) => ({
+          chore_instance_id: instance.id,
+          child_id: childId,
+          status: "assigned" as const,
+        }))
+      )
+      .select("id");
     if (assignError) {
       return { error: `Instance created, but assignment failed: ${assignError.message}` };
+    }
+    if (newAssignments && newAssignments.length > 0) {
+      await supabase.from("chore_status_events").insert(
+        newAssignments.map((a) => ({ chore_assignment_id: a.id, event_type: "assigned" as const }))
+      );
     }
 
     for (const childId of assignedTo) {

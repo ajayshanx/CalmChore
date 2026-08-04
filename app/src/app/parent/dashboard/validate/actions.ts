@@ -84,6 +84,18 @@ export async function validateChoreAssignment(_prevState: unknown, formData: For
     return { error: updateError.message };
   }
 
+  const eventType =
+    outcome === "verified_complete"
+      ? "validated_complete"
+      : outcome === "verified_partially_complete"
+        ? "validated_partial"
+        : "validated_incomplete";
+  await supabase.from("chore_status_events").insert({
+    chore_assignment_id: assignmentId,
+    event_type: eventType,
+    reason: outcome === "incomplete" ? incompleteReason : null,
+  });
+
   // Proof photos are deleted the moment an outcome is set, regardless of
   // outcome — see "Calm Chore Creation.txt" data-minimization rule. Storage
   // deletion needs the service-role client since the bucket has no policies

@@ -27,6 +27,22 @@ export default async function MyChoresPage() {
     .is("hidden_by_break_id", null) // hidden while a Chore Break covers that day
     .order("created_at", { ascending: false });
 
+  const assignmentIds = (rows ?? []).map((row) => row.id);
+  const { data: eventRows } = assignmentIds.length
+    ? await supabase
+        .from("chore_status_events")
+        .select("chore_assignment_id, event_type, reason, occurred_at")
+        .in("chore_assignment_id", assignmentIds)
+        .order("occurred_at", { ascending: true })
+    : { data: [] as { chore_assignment_id: string; event_type: string; reason: string | null; occurred_at: string }[] };
+
+  const eventsByAssignment = new Map<string, MyChoreRow["events"]>();
+  for (const e of eventRows ?? []) {
+    const list = eventsByAssignment.get(e.chore_assignment_id) ?? [];
+    list.push({ type: e.event_type, occurredAt: e.occurred_at, reason: e.reason });
+    eventsByAssignment.set(e.chore_assignment_id, list);
+  }
+
   const myChores: MyChoreRow[] = (rows ?? []).map((row) => {
     const instance = Array.isArray(row.chore_instances) ? row.chore_instances[0] : row.chore_instances;
     const chore = Array.isArray(instance?.chores) ? instance.chores[0] : instance?.chores;
@@ -45,6 +61,7 @@ export default async function MyChoresPage() {
       choreName: chore?.name ?? "Chore",
       choreInfo: chore?.info ?? null,
       requiresProof: chore?.requires_proof ?? false,
+      events: eventsByAssignment.get(row.id) ?? [],
     };
   });
 

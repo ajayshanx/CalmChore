@@ -4,6 +4,12 @@ import { useMemo, useState } from "react";
 import ChoreDetailPopup from "./ChoreDetailPopup";
 import { monthRange, weekRange } from "@/lib/chores/calendarDates";
 
+export type MyChoreEvent = {
+  type: string;
+  occurredAt: string;
+  reason: string | null;
+};
+
 export type MyChoreRow = {
   assignmentId: string;
   status: string;
@@ -19,6 +25,7 @@ export type MyChoreRow = {
   choreName: string;
   choreInfo: string | null;
   requiresProof: boolean;
+  events: MyChoreEvent[];
 };
 
 const ONGOING_STATUSES = ["unassigned", "assigned", "accepted", "unverified", "incomplete"];

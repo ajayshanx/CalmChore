@@ -60,15 +60,28 @@ export async function acceptChoreInstance(_prevState: unknown, formData: FormDat
     return { error: "You've already accepted this chore." };
   }
 
-  const { error } = await supabase.from("chore_assignments").insert({
-    chore_instance_id: instanceId,
-    child_id: session.childId,
-    status: "accepted",
-    accepted_at: new Date().toISOString(),
-  });
+  const { data: newAssignment, error } = await supabase
+    .from("chore_assignments")
+    .insert({
+      chore_instance_id: instanceId,
+      child_id: session.childId,
+      status: "accepted",
+      accepted_at: new Date().toISOString(),
+    })
+    .select("id")
+    .single();
 
   if (error) {
     return { error: error.message };
+  }
+
+  // This chore had no prior assignment row (the child accepted an
+  // open/unassigned chore directly), so there's no earlier "assigned" event
+  // to have logged — the timeline starts at Accepted for this cycle.
+  if (newAssignment) {
+    await supabase
+      .from("chore_status_events")
+      .insert({ chore_assignment_id: newAssignment.id, event_type: "accepted" });
   }
 
   await notifyAllParents(supabase, {
