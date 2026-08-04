@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { addDaysStr } from "@/lib/chores/calendarDates";
+import { maybeAwardWeeklyStreakBonus } from "@/lib/points/weeklyBonus";
 
 type Outcome = "verified_complete" | "verified_partially_complete" | "incomplete";
 
@@ -111,9 +112,17 @@ export async function validateChoreAssignment(_prevState: unknown, formData: For
     if (day) {
       const { data: streak } = await supabase
         .from("child_streaks")
-        .select("current_streak_days, last_counted_date")
+        .select("current_streak_days, last_counted_date, streak_started_date")
         .eq("child_id", assignment.child_id)
         .maybeSingle();
+
+      // Tracks the day (if any) that just got newly locked into the streak
+      // this call, and the streak's start date as of right after that — used
+      // below to check Weekly Streak Bonus eligibility. Left null for a
+      // same-day no-op or an ignored older backfill, since neither of those
+      // just completed a week.
+      let streakExtendedTo: string | null = null;
+      let effectiveStreakStartedDate: string | null = null;
 
       if (!streak || !streak.last_counted_date) {
         // First chore this child has ever had validated.
@@ -123,6 +132,8 @@ export async function validateChoreAssignment(_prevState: unknown, formData: For
           streak_started_date: day,
           last_counted_date: day,
         });
+        streakExtendedTo = day;
+        effectiveStreakStartedDate = day;
       } else if (day === streak.last_counted_date) {
         // Already credited today via an earlier chore — no-op.
       } else if (day === addDaysStr(streak.last_counted_date, 1)) {
@@ -131,6 +142,8 @@ export async function validateChoreAssignment(_prevState: unknown, formData: For
           .from("child_streaks")
           .update({ current_streak_days: streak.current_streak_days + 1, last_counted_date: day })
           .eq("child_id", assignment.child_id);
+        streakExtendedTo = day;
+        effectiveStreakStartedDate = streak.streak_started_date;
       } else if (day > streak.last_counted_date) {
         // An uncovered gap (more than a day ahead) breaks the streak and
         // starts a new one from today.
@@ -138,9 +151,26 @@ export async function validateChoreAssignment(_prevState: unknown, formData: For
           .from("child_streaks")
           .update({ current_streak_days: 1, streak_started_date: day, last_counted_date: day })
           .eq("child_id", assignment.child_id);
+        streakExtendedTo = day;
+        effectiveStreakStartedDate = day;
       }
       // day < last_counted_date: an older/backfilled instance validated
       // after a later day was already counted — leave the streak as-is.
+
+      // A Mon-Sun week can only have just become "complete" the moment its
+      // Sunday gets locked into an unbroken streak — see weeklyBonus.ts.
+      if (
+        streakExtendedTo &&
+        effectiveStreakStartedDate &&
+        new Date(`${streakExtendedTo}T00:00:00Z`).getUTCDay() === 0
+      ) {
+        await maybeAwardWeeklyStreakBonus(
+          supabase,
+          assignment.child_id,
+          streakExtendedTo,
+          effectiveStreakStartedDate
+        );
+      }
     }
   }
 
