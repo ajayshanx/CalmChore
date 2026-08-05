@@ -19,7 +19,8 @@ export async function createClient() {
           );
         } catch {
           // setAll called from a Server Component with no request context —
-          // safe to ignore if middleware is refreshing sessions elsewhere.
+          // safe to ignore because src/middleware.ts refreshes and persists
+          // the session on every request before it reaches here.
         }
       },
     },
