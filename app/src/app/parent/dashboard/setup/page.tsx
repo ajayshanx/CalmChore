@@ -4,6 +4,7 @@ import InviteParentForm from "./InviteParentForm";
 import ResetPasscodeButton from "./ResetPasscodeButton";
 import CancelInviteButton from "./CancelInviteButton";
 import AddChildForm from "./AddChildForm";
+import ConvertToLoginForm from "./ConvertToLoginForm";
 import AwardBadgeForm from "@/components/badges/AwardBadgeForm";
 import TimezoneForm from "./TimezoneForm";
 import NotificationsForm from "./NotificationsForm";
@@ -45,7 +46,7 @@ export default async function ParentSetupPage() {
         .order("created_at", { ascending: true }),
       supabase
         .from("children")
-        .select("id, username, nickname")
+        .select("id, username, nickname, is_parent_managed")
         .eq("family_id", me.family_id)
         .order("created_at", { ascending: true }),
       supabase
@@ -153,12 +154,23 @@ export default async function ParentSetupPage() {
                     key={child.id}
                     className="rounded-lg border border-calm-green/20 bg-white px-4 py-3"
                   >
-                    <p className="font-medium">{label}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{label}</p>
+                      {child.is_parent_managed && (
+                        <span className="rounded-full bg-calm-greenLight px-2 py-0.5 text-xs font-medium text-calm-green">
+                          Parent-Managed
+                        </span>
+                      )}
+                    </div>
                     {child.username && (
                       <p className="text-sm text-calm-text/60">@{child.username}</p>
                     )}
                     <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <ResetPasscodeButton childId={child.id} childLabel={label} />
+                      {child.is_parent_managed ? (
+                        <ConvertToLoginForm childId={child.id} childLabel={label} />
+                      ) : (
+                        <ResetPasscodeButton childId={child.id} childLabel={label} />
+                      )}
                       <AwardBadgeForm childId={child.id} />
                     </div>
 

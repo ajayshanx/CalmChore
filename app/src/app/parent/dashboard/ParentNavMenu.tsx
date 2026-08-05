@@ -26,10 +26,23 @@ const TAIL_LINKS: NavLink[] = [
 const itemClass =
   "rounded px-2 py-1.5 text-calm-text hover:bg-calm-greenLight hover:text-calm-green";
 
-export default function ParentNavMenu() {
+export default function ParentNavMenu({
+  managedChildren = [],
+}: {
+  managedChildren?: { id: string; label: string }[];
+}) {
   const [openDesktopGroup, setOpenDesktopGroup] = useState<"chores" | "child" | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // "Manage for [Child]" only appears at all if the family has a
+  // Parent-Managed child — see "Parent Login Options.txt".
+  const manageLabel =
+    managedChildren.length === 1
+      ? `Manage for ${managedChildren[0].label}`
+      : managedChildren.length > 1
+        ? "Manage Chores"
+        : null;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -95,6 +108,12 @@ export default function ParentNavMenu() {
           )}
         </div>
 
+        {manageLabel && (
+          <Link href="/parent/dashboard/manage" className="hover:underline" onClick={closeAll}>
+            {manageLabel}
+          </Link>
+        )}
+
         {TAIL_LINKS.map((l) => (
           <Link key={l.href} href={l.href} className="hover:underline" onClick={closeAll}>
             {l.label}
@@ -141,6 +160,11 @@ export default function ParentNavMenu() {
             ))}
 
             <div className="mt-2 flex flex-col gap-1 border-t border-calm-green/10 pt-2">
+              {manageLabel && (
+                <Link href="/parent/dashboard/manage" onClick={closeAll} className={itemClass}>
+                  {manageLabel}
+                </Link>
+              )}
               {TAIL_LINKS.map((l) => (
                 <Link key={l.href} href={l.href} onClick={closeAll} className={itemClass}>
                   {l.label}

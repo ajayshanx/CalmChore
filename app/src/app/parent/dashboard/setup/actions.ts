@@ -143,19 +143,27 @@ export async function cancelParentInvite(_prevState: unknown, formData: FormData
 const ACCENT_COLOURS = ["blue", "red", "purple", "orange", "gold", "teal"] as const;
 
 export async function addChild(_prevState: unknown, formData: FormData) {
+  const isParentManaged = formData.get("isParentManaged") === "on";
   const username = String(formData.get("username") || "").trim().toLowerCase();
   const passcode = String(formData.get("passcode") || "").trim();
   const nickname = String(formData.get("nickname") || "").trim();
   const accentColour = String(formData.get("accentColour") || "");
 
-  if (!username || username.length < 3) {
-    return { error: "Username must be at least 3 characters." };
-  }
-  if (!/^[a-z0-9_.-]+$/.test(username)) {
-    return { error: "Username can only contain letters, numbers, dots, dashes, and underscores." };
-  }
-  if (!passcode || passcode.length < 4) {
-    return { error: "Passcode must be at least 4 characters." };
+  // A Parent-Managed child (too young for their own device/login) skips
+  // username/passcode entirely — the parent tracks their chores from the
+  // Manage tab instead. Nickname and colour are still required up front
+  // since there's no later "first login" moment for them to fill those in,
+  // unlike a regular child.
+  if (!isParentManaged) {
+    if (!username || username.length < 3) {
+      return { error: "Username must be at least 3 characters." };
+    }
+    if (!/^[a-z0-9_.-]+$/.test(username)) {
+      return { error: "Username can only contain letters, numbers, dots, dashes, and underscores." };
+    }
+    if (!passcode || passcode.length < 4) {
+      return { error: "Passcode must be at least 4 characters." };
+    }
   }
   if (!nickname) {
     return { error: "Nickname is required." };
@@ -183,10 +191,11 @@ export async function addChild(_prevState: unknown, formData: FormData) {
 
   const { error } = await supabase.from("children").insert({
     family_id: parent.family_id,
-    username,
-    passcode_hash: hashPasscode(passcode),
+    username: isParentManaged ? null : username,
+    passcode_hash: isParentManaged ? null : hashPasscode(passcode),
     nickname,
     accent_colour: accentColour,
+    is_parent_managed: isParentManaged,
   });
 
   if (error) {
@@ -352,6 +361,68 @@ export async function resetChildPasscode(_prevState: unknown, formData: FormData
   }
 
   revalidatePath("/parent/dashboard/setup");
+  return { success: true };
+}
+
+// Switches a Parent-Managed child over to their own login — the "graduate"
+// direction described in "Calm Chore Setup.txt": once they're ready for
+// their own device, the parent sets a username + passcode and the child's
+// existing points, streak, and tier history carry over unchanged (nothing
+// about that history is touched here, only the login fields).
+export async function convertToOwnLogin(_prevState: unknown, formData: FormData) {
+  const childId = String(formData.get("childId") || "");
+  const username = String(formData.get("username") || "").trim().toLowerCase();
+  const passcode = String(formData.get("passcode") || "").trim();
+
+  if (!childId) {
+    return { error: "Missing child." };
+  }
+  if (!username || username.length < 3) {
+    return { error: "Username must be at least 3 characters." };
+  }
+  if (!/^[a-z0-9_.-]+$/.test(username)) {
+    return { error: "Username can only contain letters, numbers, dots, dashes, and underscores." };
+  }
+  if (!/^\d{6}$/.test(passcode)) {
+    return { error: "Passcode must be exactly 6 digits." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You must be logged in." };
+  }
+
+  const { data: parent } = await supabase
+    .from("parents")
+    .select("family_id")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!parent) {
+    return { error: "Could not find your family." };
+  }
+
+  const { error } = await supabase
+    .from("children")
+    .update({
+      username,
+      passcode_hash: hashPasscode(passcode),
+      is_parent_managed: false,
+    })
+    .eq("id", childId)
+    .eq("family_id", parent.family_id);
+
+  if (error) {
+    if (error.code === "23505") {
+      return { error: "That username is already taken. Please choose another." };
+    }
+    return { error: error.message };
+  }
+
+  revalidatePath("/parent/dashboard/setup");
+  revalidatePath("/parent/dashboard/manage");
   return { success: true };
 }
 

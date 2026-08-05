@@ -16,6 +16,7 @@ const initialState: { error?: string; success?: boolean } = {};
 
 export default function AddChildForm() {
   const [open, setOpen] = useState(false);
+  const [isParentManaged, setIsParentManaged] = useState(false);
   const [state, formAction, pending] = useActionState(addChild, initialState);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -23,6 +24,7 @@ export default function AddChildForm() {
     if (state?.success) {
       formRef.current?.reset();
       setOpen(false);
+      setIsParentManaged(false);
     }
   }, [state?.success]);
 
@@ -55,20 +57,40 @@ export default function AddChildForm() {
         </button>
       </div>
 
-      <div className="flex gap-3">
+      <label className="flex items-start gap-2 rounded-lg border border-calm-green/20 bg-calm-bg px-3 py-2 text-sm">
         <input
-          name="username"
-          placeholder="Username"
-          required
-          className="w-1/2 rounded-lg border border-calm-green/30 px-3 py-2"
+          type="checkbox"
+          name="isParentManaged"
+          checked={isParentManaged}
+          onChange={(e) => setIsParentManaged(e.target.checked)}
+          className="mt-0.5"
         />
-        <input
-          name="passcode"
-          placeholder="Passcode"
-          required
-          className="w-1/2 rounded-lg border border-calm-green/30 px-3 py-2"
-        />
-      </div>
+        <span>
+          <span className="font-medium">Parent-Managed</span>
+          <span className="block text-calm-text/60">
+            For a child too young for their own device or login — you&apos;ll track their chores
+            yourself from a &quot;Manage&quot; tab instead. No username or passcode needed; can be
+            switched to their own login later.
+          </span>
+        </span>
+      </label>
+
+      {!isParentManaged && (
+        <div className="flex gap-3">
+          <input
+            name="username"
+            placeholder="Username"
+            required={!isParentManaged}
+            className="w-1/2 rounded-lg border border-calm-green/30 px-3 py-2"
+          />
+          <input
+            name="passcode"
+            placeholder="Passcode"
+            required={!isParentManaged}
+            className="w-1/2 rounded-lg border border-calm-green/30 px-3 py-2"
+          />
+        </div>
+      )}
 
       <input
         name="nickname"
