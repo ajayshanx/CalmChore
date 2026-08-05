@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import ChoresView from "./ChoresView";
 import { getFamilyTimezone } from "@/lib/families";
 import { todayStrInTimezone } from "@/lib/chores/calendarDates";
+import { checkRecurringSchedulesLow } from "@/lib/chores/scheduleLowCheck";
 
 export default async function ParentChoresPage() {
   const supabase = await createClient();
@@ -26,6 +27,10 @@ export default async function ParentChoresPage() {
 
   const timezone = await getFamilyTimezone(supabase, parent.family_id);
   const today = todayStrInTimezone(timezone);
+
+  // Lazy check (no cron in this app) — warns parents once a recurring
+  // chore's generated schedule is down to its last few occurrences.
+  await checkRecurringSchedulesLow(supabase, parent.family_id, today);
 
   const [{ data: chores }, { data: children }, { data: ideaRows }, { data: myLikes }] = await Promise.all([
     // Nested instances + assignments needed to power the Ongoing / All Chores

@@ -54,6 +54,14 @@ export function tierChipClass(tierName: string): string {
   return TIER_STYLE[tierName] ?? TIER_STYLE.Rook;
 }
 
+// Weapon is a pure function of tier name — lets call sites that only have a
+// tierName string on hand (e.g. rows already shaped server-side, like Child
+// Progress) render the TierShield graphic without re-deriving full
+// TierStatus from streak days.
+export function weaponForTier(tierName: string): string {
+  return TIERS.find((t) => t.name === tierName)?.weapon ?? TIERS[0].weapon;
+}
+
 // "Rook through Legend: 1 free freeze per week. Master through Demigod: 2
 // free freezes per week." (see "Child Login Options.txt" — Chore Freezes).
 export function getWeeklyFreeFreezeCap(tierName: string): number {

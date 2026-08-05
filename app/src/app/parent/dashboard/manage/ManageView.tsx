@@ -7,6 +7,7 @@ import { weekRange, monthRange } from "@/lib/chores/calendarDates";
 import MarkDoneCard from "./MarkDoneCard";
 import ApplyFreezeForm from "./ApplyFreezeForm";
 import AdjustPointsForm from "./AdjustPointsForm";
+import TierShield from "@/components/icons/TierShield";
 
 export type ManagedChild = { id: string; label: string; colour: string };
 
@@ -183,7 +184,7 @@ export default function ManageView({
           </div>
 
           <div className={`flex items-center gap-4 rounded-xl px-5 py-4 ${tierChipClass(data.tier.tierName)}`}>
-            <span className="text-3xl leading-none">🛡️</span>
+            <TierShield tierName={data.tier.tierName} level={data.tier.level} weapon={data.tier.weapon} size={40} />
             <div>
               <p className="text-lg font-semibold">
                 {data.tier.tierName} · Level {data.tier.level}

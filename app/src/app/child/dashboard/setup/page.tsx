@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { pillClass } from "@/lib/chores/calendarColours";
 import { tierChipClass, getTierStatus } from "@/lib/tiers";
 import ProfileForm from "./ProfileForm";
+import TierShield from "@/components/icons/TierShield";
 
 export default async function ChildSetupPage() {
   const session = await getChildSession();
@@ -34,7 +35,8 @@ export default async function ChildSetupPage() {
         <h2 className="mb-3 text-lg font-medium text-calm-green">My Profile</h2>
         <ProfileForm nickname={session.nickname} accentColour={session.accentColour} />
         <div className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium ${tierChipClass(tier.tierName)}`}>
-          🛡️ {tier.tierName} · Level {tier.level}
+          <TierShield tierName={tier.tierName} level={tier.level} weapon={tier.weapon} size={18} />
+          {tier.tierName} · Level {tier.level}
         </div>
       </section>
 

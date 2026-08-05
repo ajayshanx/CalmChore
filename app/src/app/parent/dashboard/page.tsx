@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { pillClass } from "@/lib/chores/calendarColours";
 import { tierChipClass, getTierStatus } from "@/lib/tiers";
+import TierShield from "@/components/icons/TierShield";
 
 const ONGOING_STATUSES = ["assigned", "accepted", "unverified", "incomplete"];
 const COMPLETED_STATUSES = ["verified_complete", "verified_partially_complete"];
@@ -162,7 +163,8 @@ export default async function ParentDashboardPage() {
                       tier.tierName
                     )}`}
                   >
-                    🛡️ {tier.tierName} · Level {tier.level}
+                    <TierShield tierName={tier.tierName} level={tier.level} weapon={tier.weapon} size={16} />
+                    {tier.tierName} · Level {tier.level}
                   </div>
                 </div>
               );

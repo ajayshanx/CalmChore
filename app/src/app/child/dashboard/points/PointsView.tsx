@@ -4,6 +4,7 @@ import { useState } from "react";
 import { tierChipClass, type TierStatus } from "@/lib/tiers";
 import RequestFreezeForm from "./RequestFreezeForm";
 import CancelFreezeButton from "./CancelFreezeButton";
+import TierShield from "@/components/icons/TierShield";
 
 export type LedgerRow = {
   id: string;
@@ -146,7 +147,7 @@ export default function PointsView({
           </div>
 
           <div className={`flex items-center gap-4 rounded-xl px-5 py-4 ${tierChipClass(tier.tierName)}`}>
-            <span className="text-3xl leading-none">🛡️</span>
+            <TierShield tierName={tier.tierName} level={tier.level} weapon={tier.weapon} size={40} />
             <div>
               <p className="text-lg font-semibold">
                 {tier.tierName} · Level {tier.level}

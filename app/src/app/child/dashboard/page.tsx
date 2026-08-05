@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getChildSession } from "@/lib/childSession";
 import { createServiceClient } from "@/lib/supabase/service";
 import { tierChipClass, getTierStatus } from "@/lib/tiers";
+import TierShield from "@/components/icons/TierShield";
 import { advanceStreakThrough } from "@/lib/points/streakEngine";
 import { getFamilyTimezone } from "@/lib/families";
 import { addDaysStr, todayStrInTimezone } from "@/lib/chores/calendarDates";
@@ -61,7 +62,8 @@ export default async function ChildDashboardPage() {
         href="/child/dashboard/points"
         className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium ${tierChipClass(tier.tierName)}`}
       >
-        🛡️ {tier.tierName} · Level {tier.level}
+        <TierShield tierName={tier.tierName} level={tier.level} weapon={tier.weapon} size={18} />
+        {tier.tierName} · Level {tier.level}
       </Link>
       <p className="max-w-sm text-calm-text/70">Keep completing chores to grow your streak!</p>
     </main>

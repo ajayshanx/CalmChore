@@ -82,7 +82,7 @@ export async function createChore(_prevState: unknown, formData: FormData) {
     return { error: choreError?.message || "Could not create the chore." };
   }
 
-  const dates = generateInstanceDates({
+  const { dates } = generateInstanceDates({
     recurrenceType,
     startDate,
     endDate: recurrenceEndDate || null,
@@ -314,6 +314,12 @@ export async function addChoreInstance(_prevState: unknown, formData: FormData) 
   if (instanceError || !instance) {
     return { error: instanceError?.message || "Could not create the instance." };
   }
+
+  // A manually-added instance is exactly how a parent "extends" a recurring
+  // chore after being warned its schedule was running low — clear the flag
+  // so the warning can fire again once this newly-extended schedule runs
+  // low in turn, instead of staying silently suppressed forever.
+  await supabase.from("chores").update({ low_schedule_notified: false }).eq("id", choreId);
 
   if (assignedTo.length > 0) {
     const { data: newAssignments, error: assignError } = await supabase

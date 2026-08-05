@@ -26,17 +26,27 @@ function addMonths(d: Date, months: number): Date {
   return copy;
 }
 
+export type GeneratedSchedule = {
+  dates: string[];
+  // True when generation hit MAX_INSTANCES before satisfying the parent's
+  // requested end date or count — i.e. the schedule was cut shorter than
+  // what was actually asked for, not just capped by the (smaller) default.
+  // createChore uses this to warn the parent their recurring chore's
+  // schedule will need extending.
+  truncated: boolean;
+};
+
 export function generateInstanceDates(params: {
   recurrenceType: RecurrenceType;
   startDate: string; // YYYY-MM-DD
   endDate?: string | null; // YYYY-MM-DD
   count?: number | null;
-}): string[] {
+}): GeneratedSchedule {
   const { recurrenceType, startDate, endDate, count } = params;
   const start = new Date(`${startDate}T00:00:00Z`);
 
   if (recurrenceType === "none") {
-    return [toDateOnly(start)];
+    return { dates: [toDateOnly(start)], truncated: false };
   }
 
   const stepDays = recurrenceType === "daily" ? 1 : recurrenceType === "weekly" ? 7 : null;
@@ -47,15 +57,34 @@ export function generateInstanceDates(params: {
         ? DEFAULT_WEEKLY_COUNT
         : DEFAULT_MONTHLY_COUNT;
 
-  const maxCount = Math.min(count ?? defaultCount, MAX_INSTANCES);
+  // An explicit end date (with no explicit count) should generate as many
+  // occurrences as it takes to reach that date, bounded only by the safety
+  // cap — not by the smaller "no end date given" default. Previously this
+  // used `count ?? defaultCount` unconditionally, so a daily chore with only
+  // an end date 90 days out silently stopped generating after the default
+  // 30 instances despite `current` never having passed `end`.
+  const maxCount = Math.min(count ?? (endDate ? MAX_INSTANCES : defaultCount), MAX_INSTANCES);
   const end = endDate ? new Date(`${endDate}T00:00:00Z`) : null;
 
   const dates: string[] = [];
   let current = start;
+  let stoppedByDate = false;
   for (let i = 0; i < maxCount; i++) {
-    if (end && current > end) break;
+    if (end && current > end) {
+      stoppedByDate = true;
+      break;
+    }
     dates.push(toDateOnly(current));
     current = stepDays ? addDays(current, stepDays) : addMonths(current, 1);
   }
-  return dates;
+
+  // "Truncated" means generation stopped because it hit the safety cap, not
+  // because it satisfied the parent's own end date or count — i.e. there's
+  // genuinely more owed than what got generated.
+  const exhaustedIterations = !stoppedByDate && dates.length === maxCount;
+  const cappedBySafetyLimit = maxCount === MAX_INSTANCES;
+  const trueDemandExceedsCap = count != null ? count > MAX_INSTANCES : end !== null && current <= end;
+  const truncated = exhaustedIterations && cappedBySafetyLimit && trueDemandExceedsCap;
+
+  return { dates, truncated };
 }

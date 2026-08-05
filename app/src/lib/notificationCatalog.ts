@@ -21,7 +21,16 @@ export type NotificationAction =
   | "chore_assessment"
   | "point_awarding"
   | "point_redemption"
-  | "friend_addition";
+  | "friend_addition"
+  // Beyond the original 12 from spec — a recurring chore's generated
+  // schedule (bounded by an end date/count, or the system's generation
+  // safety cap) is about to run out, so the parent can extend it before a
+  // gap opens up. See lib/chores/scheduleLowCheck.ts.
+  | "chore_schedule_low"
+  // A child's login was locked after repeated failed passcode attempts —
+  // could be the child fumbling their own passcode, or someone else
+  // guessing at it. See child/actions.ts loginChild.
+  | "child_login_locked";
 
 export const NOTIFICATION_ACTIONS: NotificationAction[] = [
   "parent_addition",
@@ -36,6 +45,8 @@ export const NOTIFICATION_ACTIONS: NotificationAction[] = [
   "point_awarding",
   "point_redemption",
   "friend_addition",
+  "chore_schedule_low",
+  "child_login_locked",
 ];
 
 export const ACTION_LABELS: Record<NotificationAction, string> = {
@@ -51,4 +62,6 @@ export const ACTION_LABELS: Record<NotificationAction, string> = {
   point_awarding: "Point awarding",
   point_redemption: "Point redemption",
   friend_addition: "Friend addition",
+  chore_schedule_low: "Recurring chore schedule running low",
+  child_login_locked: "Child login locked (too many failed attempts)",
 };

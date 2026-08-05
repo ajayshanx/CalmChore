@@ -3,7 +3,8 @@
 import { useActionState, useState } from "react";
 import { respondToFriendRequest } from "./actions";
 import { pillClass } from "@/lib/chores/calendarColours";
-import { tierChipClass } from "@/lib/tiers";
+import { tierChipClass, weaponForTier } from "@/lib/tiers";
+import TierShield from "@/components/icons/TierShield";
 
 export type ChildProgressRow = {
   id: string;
@@ -103,7 +104,13 @@ function ChildRow({ row }: { row: ChildProgressRow }) {
       {expanded && (
         <div className="border-t border-calm-green/10 px-4 py-3">
           <div className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${tierChipClass(row.tierName)}`}>
-            🛡️ {row.tierName} · Level {row.tierLevel}
+            <TierShield
+              tierName={row.tierName}
+              level={(row.tierLevel === 2 || row.tierLevel === 3 ? row.tierLevel : 1) as 1 | 2 | 3}
+              weapon={weaponForTier(row.tierName)}
+              size={16}
+            />
+            {row.tierName} · Level {row.tierLevel}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
