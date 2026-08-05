@@ -3,15 +3,16 @@
 import { useActionState, useEffect, useState } from "react";
 import { markChoreDone } from "./actions";
 import type { ManageChoreRow } from "./ManageView";
+import FaceIcon, { type FaceStatus } from "@/components/icons/FaceIcon";
 
 const initialState: { error?: string; success?: boolean } = {};
 
-type Outcome = "verified_complete" | "verified_partially_complete" | "incomplete";
+type Outcome = FaceStatus;
 
-const OUTCOME_OPTIONS: { value: Outcome; label: string; emoji: string }[] = [
-  { value: "verified_complete", label: "Complete", emoji: "🙂" },
-  { value: "verified_partially_complete", label: "Partial", emoji: "😐" },
-  { value: "incomplete", label: "Incomplete", emoji: "😞" },
+const OUTCOME_OPTIONS: { value: Outcome; label: string }[] = [
+  { value: "verified_complete", label: "Complete" },
+  { value: "verified_partially_complete", label: "Partial" },
+  { value: "incomplete", label: "Incomplete" },
 ];
 
 export default function MarkDoneCard({ chore, childId }: { chore: ManageChoreRow; childId: string }) {
@@ -75,7 +76,7 @@ export default function MarkDoneCard({ chore, childId }: { chore: ManageChoreRow
                       : "border-calm-green/30 text-calm-text/70"
                   }`}
                 >
-                  <span>{opt.emoji}</span>
+                  <FaceIcon status={opt.value} size={16} />
                   {opt.label}
                 </button>
               ))}

@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { submitChoreProof } from "./actions";
 import type { MyChoreRow } from "./MyChoresView";
+import FaceIcon, { type FaceStatus } from "@/components/icons/FaceIcon";
 
 const initialState: { error?: string; success?: boolean } = {};
 
@@ -15,14 +16,15 @@ const STATUS_LABELS: Record<string, string> = {
   verified_partially_complete: "Partially Complete",
 };
 
-// Custom line-art face icons for the 3 validation outcomes are a deferred
-// polish item — using colour + short text label for now, per the spec's
-// fallback requirement that a text label always accompanies the icon.
 const OUTCOME_STYLE: Record<string, string> = {
   verified_complete: "text-emerald-700",
   verified_partially_complete: "text-amber-700",
   incomplete: "text-red-700",
 };
+
+function isOutcome(status: string): status is FaceStatus {
+  return status === "verified_complete" || status === "verified_partially_complete" || status === "incomplete";
+}
 
 type TimelineEntry = {
   label: string;
@@ -30,13 +32,14 @@ type TimelineEntry = {
   reason?: string | null;
   dotClass: string;
   textClass: string;
+  outcome?: FaceStatus;
 };
 
 // Same 6 event types logged to chore_status_events — see that table's
 // migration for why this exists (a single assignment row's snapshot
 // timestamps get overwritten on every incomplete -> resubmit cycle, so they
 // can't show "what has happened over time" across more than one cycle).
-const EVENT_META: Record<string, { label: string; dotClass: string; textClass: string }> = {
+const EVENT_META: Record<string, { label: string; dotClass: string; textClass: string; outcome?: FaceStatus }> = {
   assigned: { label: "Assigned", dotClass: "bg-calm-text/30", textClass: "text-calm-text" },
   accepted: { label: "Accepted", dotClass: "bg-calm-green", textClass: "text-calm-text" },
   submitted: { label: "Submitted for verification", dotClass: "bg-calm-green", textClass: "text-calm-text" },
@@ -44,13 +47,20 @@ const EVENT_META: Record<string, { label: string; dotClass: string; textClass: s
     label: "Verified Complete",
     dotClass: "bg-emerald-600",
     textClass: "text-emerald-700",
+    outcome: "verified_complete",
   },
   validated_partial: {
     label: "Verified Partially Complete",
     dotClass: "bg-amber-600",
     textClass: "text-amber-700",
+    outcome: "verified_partially_complete",
   },
-  validated_incomplete: { label: "Incomplete", dotClass: "bg-red-600", textClass: "text-red-700" },
+  validated_incomplete: {
+    label: "Incomplete",
+    dotClass: "bg-red-600",
+    textClass: "text-red-700",
+    outcome: "incomplete",
+  },
 };
 
 export default function ChoreDetailPopup({
@@ -109,6 +119,7 @@ export default function ChoreDetailPopup({
             reason: chore.incompleteReason,
             dotClass: "bg-calm-text/50",
             textClass: OUTCOME_STYLE[chore.status] ?? "text-calm-text",
+            outcome: isOutcome(chore.status) ? chore.status : undefined,
           },
         ].filter((e): e is TimelineEntry => Boolean(e));
 
@@ -158,7 +169,8 @@ export default function ChoreDetailPopup({
           </div>
           <div className="flex justify-between">
             <dt className="text-calm-text/50">Status</dt>
-            <dd className={OUTCOME_STYLE[chore.status] ?? ""}>
+            <dd className={`flex items-center gap-1.5 ${OUTCOME_STYLE[chore.status] ?? ""}`}>
+              {isOutcome(chore.status) && <FaceIcon status={chore.status} size={18} />}
               {STATUS_LABELS[chore.status] ?? chore.status}
             </dd>
           </div>
@@ -184,11 +196,15 @@ export default function ChoreDetailPopup({
               {timeline.map((t, i) => (
                 <li key={i} className="relative flex gap-3 pb-4 last:pb-0">
                   {i < timeline.length - 1 && (
-                    <span className="absolute left-[4.5px] top-3 h-full w-px bg-calm-green/15" />
+                    <span className="absolute left-[9.5px] top-5 h-full w-px bg-calm-green/15" />
                   )}
-                  <span
-                    className={`relative z-10 mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${t.dotClass}`}
-                  />
+                  <span className="relative z-10 flex h-5 w-5 shrink-0 items-center justify-center">
+                    {t.outcome ? (
+                      <FaceIcon status={t.outcome} size={20} />
+                    ) : (
+                      <span className={`h-2.5 w-2.5 rounded-full ${t.dotClass}`} />
+                    )}
+                  </span>
                   <div className="flex-1">
                     <div className="flex flex-wrap items-baseline justify-between gap-x-2">
                       <span className={`text-sm font-medium ${t.textClass}`}>{t.label}</span>

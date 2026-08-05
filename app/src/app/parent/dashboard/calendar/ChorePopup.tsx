@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import type { CalendarInstance } from "@/components/chores/CalendarGrid";
 import { assignChildToInstance, unassignChildFromInstance, updateInstanceSchedule } from "./actions";
+import FaceIcon, { type FaceStatus } from "@/components/icons/FaceIcon";
 
 const initialState: { error?: string; success?: boolean } = {};
 
@@ -14,6 +15,10 @@ const STATUS_LABELS: Record<string, string> = {
   verified_complete: "Complete",
   verified_partially_complete: "Partially Complete",
 };
+
+function isOutcome(status: string): status is FaceStatus {
+  return status === "verified_complete" || status === "verified_partially_complete" || status === "incomplete";
+}
 
 // yyyy-mm-ddThh:mm, in local time, for a <input type="datetime-local"> value.
 function toDatetimeLocalValue(iso: string | null): string {
@@ -171,7 +176,10 @@ export default function ChorePopup({
                 <li key={a.id} className="flex items-center justify-between text-sm">
                   <span>{a.childLabel}</span>
                   <span className="flex items-center gap-2">
-                    <span className="text-calm-text/60">{STATUS_LABELS[a.status] ?? a.status}</span>
+                    <span className="flex items-center gap-1.5 text-calm-text/60">
+                      {isOutcome(a.status) && <FaceIcon status={a.status} size={16} />}
+                      {STATUS_LABELS[a.status] ?? a.status}
+                    </span>
                     {a.status === "assigned" && (
                       <form action={unassignFormAction}>
                         <input type="hidden" name="assignmentId" value={a.id} />

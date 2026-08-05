@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { validateChoreAssignment } from "./actions";
 import type { ValidationRow } from "./ValidateView";
 import AwardBadgeForm from "@/components/badges/AwardBadgeForm";
+import FaceIcon from "@/components/icons/FaceIcon";
 
 const initialState: { error?: string; success?: boolean } = {};
 
@@ -95,35 +96,38 @@ export default function ValidatePopup({
               <button
                 type="button"
                 onClick={() => setOutcome("verified_complete")}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+                className={`flex flex-1 flex-col items-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${
                   outcome === "verified_complete"
                     ? "border-emerald-600 bg-emerald-50 text-emerald-800"
                     : "border-calm-green/30 text-calm-text/70"
                 }`}
               >
-                🙂 Completed
+                <FaceIcon status="verified_complete" size={24} />
+                Completed
               </button>
               <button
                 type="button"
                 onClick={() => setOutcome("verified_partially_complete")}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+                className={`flex flex-1 flex-col items-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${
                   outcome === "verified_partially_complete"
                     ? "border-amber-600 bg-amber-50 text-amber-800"
                     : "border-calm-green/30 text-calm-text/70"
                 }`}
               >
-                😐 Partially Complete
+                <FaceIcon status="verified_partially_complete" size={24} />
+                Partially Complete
               </button>
               <button
                 type="button"
                 onClick={() => setOutcome("incomplete")}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+                className={`flex flex-1 flex-col items-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium ${
                   outcome === "incomplete"
                     ? "border-red-600 bg-red-50 text-red-800"
                     : "border-calm-green/30 text-calm-text/70"
                 }`}
               >
-                ☹️ Incomplete
+                <FaceIcon status="incomplete" size={24} />
+                Incomplete
               </button>
             </div>
             <input type="hidden" name="outcome" value={outcome ?? ""} />

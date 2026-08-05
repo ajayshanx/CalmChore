@@ -3,6 +3,7 @@
 import { useActionState, useEffect } from "react";
 import type { CalendarInstance } from "@/components/chores/CalendarGrid";
 import { acceptChoreInstance } from "./actions";
+import FaceIcon, { type FaceStatus } from "@/components/icons/FaceIcon";
 
 const initialState: { error?: string; success?: boolean } = {};
 
@@ -14,6 +15,10 @@ const STATUS_LABELS: Record<string, string> = {
   verified_complete: "Complete",
   verified_partially_complete: "Partially Complete",
 };
+
+function isOutcome(status: string): status is FaceStatus {
+  return status === "verified_complete" || status === "verified_partially_complete" || status === "incomplete";
+}
 
 export default function ChorePopup({
   instance,
@@ -80,7 +85,10 @@ export default function ChorePopup({
               {instance.assignments.map((a) => (
                 <li key={a.id} className="flex justify-between text-sm">
                   <span>{a.childLabel}</span>
-                  <span className="text-calm-text/60">{STATUS_LABELS[a.status] ?? a.status}</span>
+                  <span className="flex items-center gap-1.5 text-calm-text/60">
+                    {isOutcome(a.status) && <FaceIcon status={a.status} size={16} />}
+                    {STATUS_LABELS[a.status] ?? a.status}
+                  </span>
                 </li>
               ))}
             </ul>

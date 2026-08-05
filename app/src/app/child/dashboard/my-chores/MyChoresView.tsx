@@ -2,7 +2,13 @@
 
 import { useMemo, useState } from "react";
 import ChoreDetailPopup from "./ChoreDetailPopup";
+import FaceIcon, { type FaceStatus } from "@/components/icons/FaceIcon";
 import { monthRange, weekRange } from "@/lib/chores/calendarDates";
+
+const OUTCOME_STATUSES: FaceStatus[] = ["verified_complete", "verified_partially_complete", "incomplete"];
+function isOutcome(status: string): status is FaceStatus {
+  return (OUTCOME_STATUSES as string[]).includes(status);
+}
 
 export type MyChoreEvent = {
   type: string;
@@ -116,11 +122,16 @@ export default function MyChoresView({ chores, today }: { chores: MyChoreRow[]; 
                 className="w-full rounded-lg border border-calm-green/20 bg-white px-4 py-3 text-left"
               >
                 <p className="font-medium">{c.choreName}</p>
-                <p className="text-sm text-calm-text/60">
-                  {c.date}
-                  {c.time ? ` ${c.time}` : ""} · {c.points} pt{c.points === 1 ? "" : "s"} ·{" "}
-                  {STATUS_LABELS[c.status] ?? c.status}
-                  {c.awardedPoints !== null ? ` · Awarded ${c.awardedPoints}` : ""}
+                <p className="flex flex-wrap items-center gap-1 text-sm text-calm-text/60">
+                  <span>
+                    {c.date}
+                    {c.time ? ` ${c.time}` : ""} · {c.points} pt{c.points === 1 ? "" : "s"} ·
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    {isOutcome(c.status) && <FaceIcon status={c.status} size={16} />}
+                    {STATUS_LABELS[c.status] ?? c.status}
+                  </span>
+                  {c.awardedPoints !== null && <span>· Awarded {c.awardedPoints}</span>}
                 </p>
               </button>
             </li>
