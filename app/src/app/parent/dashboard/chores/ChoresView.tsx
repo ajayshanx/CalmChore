@@ -383,6 +383,16 @@ export default function ChoresView({
           chore={selectedChore}
           familyChildren={familyChildren}
           onClose={() => setSelectedChoreId(null)}
+          onDuplicate={(c) => {
+            setSelectedChoreId(null);
+            openCreate({
+              name: `Copy of ${c.name}`,
+              info: c.info ?? "",
+              points: c.points,
+              assignmentType: c.assignment_type,
+              requiresProof: c.requires_proof,
+            });
+          }}
         />
       )}
     </div>

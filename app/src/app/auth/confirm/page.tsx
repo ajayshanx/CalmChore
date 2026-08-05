@@ -31,6 +31,15 @@ function ConfirmInner() {
     async function run() {
       const supabase = createClient();
 
+      // Password recovery links carry `type=recovery` as a query param
+      // alongside the token in the fragment (both signup-confirm and
+      // recovery emails route through the same /auth/v1/verify endpoint) —
+      // once the session is established, that's what tells us to send the
+      // parent to set a new password instead of finish-setup, which would
+      // otherwise incorrectly re-run family provisioning / T&C acceptance.
+      const typeParam = searchParams.get("type");
+      const destination = typeParam === "recovery" ? "/parent/reset-password" : "/parent/finish-setup";
+
       const hash = typeof window !== "undefined" ? window.location.hash : "";
       if (hash.includes("access_token")) {
         const hashParams = new URLSearchParams(hash.replace(/^#/, ""));
@@ -42,7 +51,7 @@ function ConfirmInner() {
           if (error) {
             setFailed(true);
           } else {
-            router.replace("/parent/finish-setup");
+            router.replace(destination);
           }
           return;
         }
@@ -58,7 +67,7 @@ function ConfirmInner() {
         if (error) {
           setFailed(true);
         } else {
-          router.replace("/parent/finish-setup");
+          router.replace(destination);
         }
         return;
       }

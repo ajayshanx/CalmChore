@@ -68,10 +68,12 @@ export default function ChoreDetailPopup({
   chore,
   familyChildren,
   onClose,
+  onDuplicate,
 }: {
   chore: ChoreRow;
   familyChildren: { id: string; label: string }[];
   onClose: () => void;
+  onDuplicate?: (chore: ChoreRow) => void;
 }) {
   const [tab, setTab] = useState<"details" | "instances">("details");
   const [editing, setEditing] = useState(false);
@@ -165,12 +167,22 @@ export default function ChoreDetailPopup({
                   <dd className="capitalize">{chore.status}</dd>
                 </div>
               </dl>
-              <button
-                onClick={() => setEditing(true)}
-                className="self-start text-sm font-medium text-calm-green underline"
-              >
-                Edit chore
-              </button>
+              <div className="flex items-center gap-4 self-start">
+                <button
+                  onClick={() => setEditing(true)}
+                  className="text-sm font-medium text-calm-green underline"
+                >
+                  Edit chore
+                </button>
+                {onDuplicate && (
+                  <button
+                    onClick={() => onDuplicate(chore)}
+                    className="text-sm font-medium text-calm-green underline"
+                  >
+                    Duplicate
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <form action={editFormAction} className="flex flex-col gap-3">

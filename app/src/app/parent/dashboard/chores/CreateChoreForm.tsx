@@ -6,7 +6,13 @@ import { FEELS_LIKE_OPTIONS, suggestedPoints } from "@/lib/chores/points";
 
 const initialState: { error?: string; success?: boolean } = {};
 
-export type ChorePrefill = { name: string; info: string; points: number };
+export type ChorePrefill = {
+  name: string;
+  info: string;
+  points: number;
+  assignmentType?: string;
+  requiresProof?: boolean;
+};
 
 export default function CreateChoreForm({
   familyChildren,
@@ -77,7 +83,12 @@ export default function CreateChoreForm({
       </label>
 
       <label className="flex items-center gap-2 text-sm">
-        <input name="requiresProof" type="checkbox" className="h-4 w-4" />
+        <input
+          name="requiresProof"
+          type="checkbox"
+          defaultChecked={prefill?.requiresProof ?? false}
+          className="h-4 w-4"
+        />
         Requires photo proof
       </label>
 
@@ -85,11 +96,22 @@ export default function CreateChoreForm({
         <p className="mb-1 text-sm font-medium text-calm-text/70">Assignment type</p>
         <div className="flex gap-4 text-sm">
           <label className="flex items-center gap-1.5">
-            <input type="radio" name="assignmentType" value="single" defaultChecked /> Single
-            child
+            <input
+              type="radio"
+              name="assignmentType"
+              value="single"
+              defaultChecked={(prefill?.assignmentType ?? "single") === "single"}
+            />{" "}
+            Single child
           </label>
           <label className="flex items-center gap-1.5">
-            <input type="radio" name="assignmentType" value="multi" /> Multiple children
+            <input
+              type="radio"
+              name="assignmentType"
+              value="multi"
+              defaultChecked={prefill?.assignmentType === "multi"}
+            />{" "}
+            Multiple children
           </label>
         </div>
       </div>

@@ -66,6 +66,12 @@ export default function ParentLoginPage() {
           </button>
         </form>
 
+        <p className="mt-3 text-center text-sm">
+          <Link href="/parent/forgot-password" className="text-calm-text/50 underline">
+            Forgot password?
+          </Link>
+        </p>
+
         <p className="mt-6 text-center text-sm text-calm-text/70">
           First time here?{" "}
           <Link href="/parent/create-account" className="font-medium text-calm-green underline">
