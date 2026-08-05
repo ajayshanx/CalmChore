@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { approveRedemption, rejectRedemption } from "./actions";
 import { CATEGORY_ICONS, CATEGORY_LABELS, formatRequestDetails, type RedemptionCategory } from "@/lib/redemption";
+import { formatGuidanceForParent } from "@/lib/redemptionGuidance";
 import type { RedemptionRequestRow } from "./RedemptionView";
 
 const initialState: { error?: string; success?: boolean } = {};
@@ -23,6 +24,7 @@ export default function RedemptionRequestCard({ row }: { row: RedemptionRequestR
         {icon} {label} · {row.childLabel}
       </p>
       <p className="mt-0.5 text-sm text-calm-text/60">{formatRequestDetails(row.category, row.details)}</p>
+      <p className="mt-1 text-xs text-calm-text/50">{formatGuidanceForParent(row.childLabel, row.guidance)}</p>
 
       {mode === "idle" && (
         <div className="mt-3 flex gap-2">

@@ -2,6 +2,7 @@
 
 import RedemptionRequestCard from "./RedemptionRequestCard";
 import { CATEGORY_ICONS, CATEGORY_LABELS, formatRequestDetails, type RedemptionCategory, type RequestDetails } from "@/lib/redemption";
+import type { RedemptionGuidance } from "@/lib/redemptionGuidance";
 
 export type RedemptionRequestRow = {
   id: string;
@@ -14,6 +15,7 @@ export type RedemptionRequestRow = {
   pointsUsed: number | null;
   rejectionReason: string | null;
   createdAt: string;
+  guidance: RedemptionGuidance;
 };
 
 function DecidedGrid({

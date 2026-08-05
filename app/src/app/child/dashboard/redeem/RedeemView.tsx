@@ -11,6 +11,7 @@ import {
   type RedemptionCategory,
   type RequestDetails,
 } from "@/lib/redemption";
+import { formatGuidanceForChild, type RedemptionGuidance } from "@/lib/redemptionGuidance";
 
 export type RedemptionRow = {
   id: string;
@@ -24,7 +25,11 @@ export type RedemptionRow = {
 
 const initialState: { error?: string; success?: boolean } = {};
 
-function RequestForm() {
+function RequestForm({
+  guidanceByCategory,
+}: {
+  guidanceByCategory: Record<RedemptionCategory, RedemptionGuidance>;
+}) {
   const [category, setCategory] = useState<RedemptionCategory | null>(null);
   const [state, formAction, pending] = useActionState(requestRedemption, initialState);
   const formRef = useRef<HTMLFormElement>(null);
@@ -56,6 +61,12 @@ function RequestForm() {
           </button>
         ))}
       </div>
+
+      {category && (
+        <p className="rounded-lg bg-calm-bg px-3 py-2 text-xs text-calm-text/70">
+          {formatGuidanceForChild(guidanceByCategory[category])}
+        </p>
+      )}
 
       {(category === "grocery" || category === "purchases" || category === "other") && (
         <label className="text-xs text-calm-text/60">
@@ -183,9 +194,11 @@ function RequestGrid({
 export default function RedeemView({
   totalPoints,
   requests,
+  guidanceByCategory,
 }: {
   totalPoints: number;
   requests: RedemptionRow[];
+  guidanceByCategory: Record<RedemptionCategory, RedemptionGuidance>;
 }) {
   const pending = requests.filter((r) => r.status === "pending");
   const approved = requests.filter((r) => r.status === "approved");
@@ -198,7 +211,7 @@ export default function RedeemView({
         <p className="text-sm text-calm-text/50">Points Available</p>
       </div>
 
-      <RequestForm />
+      <RequestForm guidanceByCategory={guidanceByCategory} />
 
       <RequestGrid title="Requested Redemption" rows={pending} emptyText="No pending requests." />
 
