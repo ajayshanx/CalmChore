@@ -3,6 +3,7 @@ import ParentNavMenu from "./ParentNavMenu";
 import { createClient } from "@/lib/supabase/server";
 import NotificationBell, { type NotificationItem } from "@/components/notifications/NotificationBell";
 import { markNotificationRead, markAllNotificationsRead } from "./notificationActions";
+import InstallPrompt from "@/components/InstallPrompt";
 
 async function getNavData(): Promise<{
   notifications: NotificationItem[];
@@ -72,6 +73,7 @@ export default async function ParentDashboardLayout({
           <LogoutButton />
         </div>
       </header>
+      <InstallPrompt />
       {children}
     </div>
   );

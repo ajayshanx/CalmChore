@@ -99,29 +99,45 @@ export default function ChoreDetailPopup({
         })
       : // Fallback for assignments created before status-event logging
         // existed — reconstructed from the single-row snapshot, so it only
-        // reflects the most recent cycle rather than full history.
+        // reflects the most recent cycle rather than full history. Built via
+        // conditional spread (rather than filter + type-guard) since a
+        // mixed-shape array unioned with null/"" doesn't reliably narrow to
+        // TimelineEntry[] through .filter() — this previously broke the
+        // Vercel build with a type error on this assignment.
         [
-          chore.acceptedAt && {
-            label: "Accepted",
-            at: chore.acceptedAt,
-            dotClass: "bg-calm-green",
-            textClass: "text-calm-text",
-          },
-          chore.submittedAt && {
-            label: "Submitted for verification",
-            at: chore.submittedAt,
-            dotClass: "bg-calm-green",
-            textClass: "text-calm-text",
-          },
-          chore.validatedAt && {
-            label: STATUS_LABELS[chore.status] ?? "Reviewed",
-            at: chore.validatedAt,
-            reason: chore.incompleteReason,
-            dotClass: "bg-calm-text/50",
-            textClass: OUTCOME_STYLE[chore.status] ?? "text-calm-text",
-            outcome: isOutcome(chore.status) ? chore.status : undefined,
-          },
-        ].filter((e): e is TimelineEntry => Boolean(e));
+          ...(chore.acceptedAt
+            ? [
+                {
+                  label: "Accepted",
+                  at: chore.acceptedAt,
+                  dotClass: "bg-calm-green",
+                  textClass: "text-calm-text",
+                } satisfies TimelineEntry,
+              ]
+            : []),
+          ...(chore.submittedAt
+            ? [
+                {
+                  label: "Submitted for verification",
+                  at: chore.submittedAt,
+                  dotClass: "bg-calm-green",
+                  textClass: "text-calm-text",
+                } satisfies TimelineEntry,
+              ]
+            : []),
+          ...(chore.validatedAt
+            ? [
+                {
+                  label: STATUS_LABELS[chore.status] ?? "Reviewed",
+                  at: chore.validatedAt,
+                  reason: chore.incompleteReason,
+                  dotClass: "bg-calm-text/50",
+                  textClass: OUTCOME_STYLE[chore.status] ?? "text-calm-text",
+                  outcome: isOutcome(chore.status) ? chore.status : undefined,
+                } satisfies TimelineEntry,
+              ]
+            : []),
+        ];
 
   // "If there is a deadline to the chore, this should be pre-populated on
   // the timeline (in the future if it has not yet passed)" — shown at its

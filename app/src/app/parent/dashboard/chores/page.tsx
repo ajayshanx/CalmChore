@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ChoresView from "./ChoresView";
+import { getFamilyTimezone } from "@/lib/families";
+import { todayStrInTimezone } from "@/lib/chores/calendarDates";
 
 export default async function ParentChoresPage() {
   const supabase = await createClient();
@@ -22,10 +24,18 @@ export default async function ParentChoresPage() {
     redirect("/parent/finish-setup");
   }
 
+  const timezone = await getFamilyTimezone(supabase, parent.family_id);
+  const today = todayStrInTimezone(timezone);
+
   const [{ data: chores }, { data: children }, { data: ideaRows }, { data: myLikes }] = await Promise.all([
+    // Nested instances + assignments needed to power the Ongoing / All Chores
+    // sub-tabs and the "current or next instance" info shown per chore (see
+    // "Parent Login Options.txt" — Chores tab).
     supabase
       .from("chores")
-      .select("id, name, info, points, status, assignment_type, requires_proof")
+      .select(
+        "id, name, info, points, status, assignment_type, requires_proof, chore_instances(id, scheduled_date, scheduled_time, deadline_at, points, chore_assignments(id, child_id, status, awarded_points))"
+      )
       .eq("family_id", parent.family_id)
       .order("name", { ascending: true }),
     supabase
@@ -46,6 +56,33 @@ export default async function ParentChoresPage() {
     supabase.from("chore_likes").select("chore_id").eq("parent_id", user.id),
   ]);
 
+  const childLabelMap = new Map(
+    (children ?? []).map((c) => [c.id, c.nickname || c.username || "Unnamed child"])
+  );
+
+  const choreRows = (chores ?? []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    info: c.info,
+    points: c.points,
+    status: c.status,
+    assignment_type: c.assignment_type,
+    requires_proof: c.requires_proof,
+    instances: (c.chore_instances ?? []).map((inst) => ({
+      id: inst.id,
+      date: inst.scheduled_date as string,
+      time: inst.scheduled_time,
+      deadlineAt: inst.deadline_at,
+      points: inst.points,
+      assignments: (inst.chore_assignments ?? []).map((a) => ({
+        childId: a.child_id,
+        childLabel: childLabelMap.get(a.child_id) ?? "Unknown",
+        status: a.status,
+        awardedPoints: a.awarded_points,
+      })),
+    })),
+  }));
+
   const familyChildren = (children ?? []).map((c) => ({
     id: c.id,
     label: c.nickname || c.username || "Unnamed child",
@@ -64,7 +101,7 @@ export default async function ParentChoresPage() {
   return (
     <main className="mx-auto flex min-h-[calc(100vh-65px)] max-w-3xl flex-col gap-6 px-6 py-10">
       <h1 className="text-2xl font-semibold text-calm-green">Chores</h1>
-      <ChoresView chores={chores ?? []} familyChildren={familyChildren} choreIdeas={choreIdeas} />
+      <ChoresView chores={choreRows} familyChildren={familyChildren} choreIdeas={choreIdeas} today={today} />
     </main>
   );
 }

@@ -6,6 +6,7 @@ import { todayStrInTimezone } from "@/lib/chores/calendarDates";
 import { getFamilyTimezone } from "@/lib/families";
 import NotificationBell, { type NotificationItem } from "@/components/notifications/NotificationBell";
 import { markChildNotificationRead, markAllChildNotificationsRead } from "./notificationActions";
+import InstallPrompt from "@/components/InstallPrompt";
 
 async function getRecentNotifications(childId: string): Promise<NotificationItem[]> {
   const supabase = createServiceClient();
@@ -81,6 +82,7 @@ export default async function ChildDashboardLayout({
           <LogoutButton />
         </div>
       </header>
+      <InstallPrompt />
       {children}
     </div>
   );
