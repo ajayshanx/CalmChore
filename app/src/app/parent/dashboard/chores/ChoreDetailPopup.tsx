@@ -286,15 +286,20 @@ export default function ChoreDetailPopup({
                   All
                 </button>
               </div>
-              <button
-                onClick={() => setShowAddInstance((s) => !s)}
-                className="text-sm font-medium text-calm-green underline"
-              >
-                {showAddInstance ? "Cancel" : "Add Instance"}
-              </button>
+              {/* "A chore that isn't recurring will have a single chore
+                  instance, with no option to create a new instance" —
+                  Calm Chore Creation.txt. */}
+              {chore.recurrence_type !== "none" && (
+                <button
+                  onClick={() => setShowAddInstance((s) => !s)}
+                  className="text-sm font-medium text-calm-green underline"
+                >
+                  {showAddInstance ? "Cancel" : "Add Instance"}
+                </button>
+              )}
             </div>
 
-            {showAddInstance && (
+            {showAddInstance && chore.recurrence_type !== "none" && (
               <form
                 action={addFormAction}
                 className="flex flex-col gap-3 rounded-lg border border-calm-green/20 bg-calm-bg p-3"

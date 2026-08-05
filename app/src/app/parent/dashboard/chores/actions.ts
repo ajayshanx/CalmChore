@@ -7,7 +7,7 @@ import { notifyChild } from "@/lib/notifications";
 import { todayStrInTimezone } from "@/lib/chores/calendarDates";
 import { getFamilyTimezone } from "@/lib/families";
 
-const RECURRENCE_TYPES: RecurrenceType[] = ["none", "daily", "weekly", "monthly"];
+const RECURRENCE_TYPES: RecurrenceType[] = ["none", "daily", "weekly", "monthly", "manual"];
 const CHORE_STATUSES = ["active", "inactive"];
 
 export async function createChore(_prevState: unknown, formData: FormData) {
@@ -23,6 +23,12 @@ export async function createChore(_prevState: unknown, formData: FormData) {
     ? Number(formData.get("recurrenceCount"))
     : null;
   const assignedTo = formData.getAll("assignedTo").map(String).filter(Boolean);
+  // "Set Manually" — Calm Chore Creation.txt's 4th recurrence cadence,
+  // alongside daily/weekly/monthly. Parallel arrays from the repeatable
+  // date/time rows in CreateChoreForm (getAll preserves DOM order, so index
+  // i in each array belongs to the same row).
+  const manualDates = formData.getAll("manualDate").map(String);
+  const manualTimes = formData.getAll("manualTime").map(String);
 
   if (!name) {
     return { error: "Chore name is required." };
@@ -39,7 +45,11 @@ export async function createChore(_prevState: unknown, formData: FormData) {
   if (!RECURRENCE_TYPES.includes(recurrenceType)) {
     return { error: "Invalid recurrence type." };
   }
-  if (!startDate) {
+  if (recurrenceType === "manual") {
+    if (manualDates.length === 0 || manualDates.some((d) => !d)) {
+      return { error: "Enter at least one date for a manually-scheduled chore." };
+    }
+  } else if (!startDate) {
     return { error: "Start date is required." };
   }
 
@@ -82,16 +92,29 @@ export async function createChore(_prevState: unknown, formData: FormData) {
     return { error: choreError?.message || "Could not create the chore." };
   }
 
-  const { dates } = generateInstanceDates({
-    recurrenceType,
-    startDate,
-    endDate: recurrenceEndDate || null,
-    count: recurrenceCount,
-  });
+  const instanceRows =
+    recurrenceType === "manual"
+      ? manualDates.map((scheduled_date, i) => ({
+          chore_id: chore.id,
+          scheduled_date,
+          scheduled_time: manualTimes[i] || null,
+          points,
+        }))
+      : generateInstanceDates({
+          recurrenceType,
+          startDate,
+          endDate: recurrenceEndDate || null,
+          count: recurrenceCount,
+        }).dates.map((scheduled_date) => ({
+          chore_id: chore.id,
+          scheduled_date,
+          scheduled_time: null,
+          points,
+        }));
 
   const { data: instances, error: instancesError } = await supabase
     .from("chore_instances")
-    .insert(dates.map((scheduled_date) => ({ chore_id: chore.id, scheduled_date, points })))
+    .insert(instanceRows)
     .select("id");
 
   if (instancesError || !instances) {
@@ -283,11 +306,18 @@ export async function addChoreInstance(_prevState: unknown, formData: FormData) 
 
   const { data: chore } = await supabase
     .from("chores")
-    .select("id, name, points, assignment_type, family_id")
+    .select("id, name, points, assignment_type, family_id, recurrence_type")
     .eq("id", choreId)
     .maybeSingle();
   if (!chore) {
     return { error: "Chore not found." };
+  }
+  if (chore.recurrence_type === "none") {
+    // "A chore that isn't recurring will have a single chore instance, with
+    // no option to create a new instance." — Calm Chore Creation.txt. The UI
+    // already hides this action for a non-recurring chore; this is just
+    // defense in depth against a direct form submission.
+    return { error: "This chore isn't recurring, so it can't have another instance added." };
   }
 
   if (chore.assignment_type === "single" && assignedTo.length > 1) {

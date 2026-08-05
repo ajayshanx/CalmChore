@@ -32,6 +32,7 @@ export type ChoreRow = {
   status: string;
   assignment_type: string;
   requires_proof: boolean;
+  recurrence_type: string;
   instances: ChoreInstanceSummary[];
 };
 

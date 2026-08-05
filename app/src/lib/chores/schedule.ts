@@ -8,7 +8,11 @@ const DEFAULT_DAILY_COUNT = 30;
 const DEFAULT_WEEKLY_COUNT = 12;
 const DEFAULT_MONTHLY_COUNT = 12;
 
-export type RecurrenceType = "none" | "daily" | "weekly" | "monthly";
+// "manual" (Calm Chore Creation.txt's "Set Manually") never reaches
+// generateInstanceDates — its dates come directly from the parent's own
+// list (see createChore) — but it's part of the shared type since the
+// `chores.recurrence_type` column and the create-chore form both need it.
+export type RecurrenceType = "none" | "daily" | "weekly" | "monthly" | "manual";
 
 function toDateOnly(d: Date): string {
   return d.toISOString().slice(0, 10);

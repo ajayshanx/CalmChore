@@ -25,10 +25,27 @@ export default function CreateChoreForm({
 }) {
   const [state, formAction, pending] = useActionState(createChore, initialState);
   const [points, setPoints] = useState(prefill?.points ?? 1);
-  const [recurrenceType, setRecurrenceType] = useState<"none" | "daily" | "weekly" | "monthly">(
-    "none"
-  );
+  const [recurrenceType, setRecurrenceType] = useState<
+    "none" | "daily" | "weekly" | "monthly" | "manual"
+  >("none");
   const today = new Date().toISOString().slice(0, 10);
+
+  // "Set Manually" recurrence — Calm Chore Creation.txt lists this as a 4th
+  // cadence alongside daily/weekly/monthly, for a schedule that doesn't fit
+  // a fixed pattern. Instead of a start date + cadence, the parent builds
+  // the exact instance list by hand.
+  const [manualDates, setManualDates] = useState<{ date: string; time: string }[]>([
+    { date: today, time: "" },
+  ]);
+  function addManualDate() {
+    setManualDates((rows) => [...rows, { date: "", time: "" }]);
+  }
+  function removeManualDate(index: number) {
+    setManualDates((rows) => rows.filter((_, i) => i !== index));
+  }
+  function updateManualDate(index: number, field: "date" | "time", value: string) {
+    setManualDates((rows) => rows.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
+  }
 
   useEffect(() => {
     if (state?.success) {
@@ -135,7 +152,7 @@ export default function CreateChoreForm({
       <div>
         <p className="mb-1 text-sm font-medium text-calm-text/70">Recurring</p>
         <div className="flex flex-wrap gap-4 text-sm">
-          {(["none", "daily", "weekly", "monthly"] as const).map((opt) => (
+          {(["none", "daily", "weekly", "monthly", "manual"] as const).map((opt) => (
             <label key={opt} className="flex items-center gap-1.5 capitalize">
               <input
                 type="radio"
@@ -144,26 +161,28 @@ export default function CreateChoreForm({
                 defaultChecked={opt === "none"}
                 onChange={() => setRecurrenceType(opt)}
               />
-              {opt === "none" ? "No" : opt}
+              {opt === "none" ? "No" : opt === "manual" ? "Set Manually" : opt}
             </label>
           ))}
         </div>
       </div>
 
-      <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-calm-text/70">
-          {recurrenceType === "none" ? "Date" : "Start date"}
-        </span>
-        <input
-          name="startDate"
-          type="date"
-          required
-          defaultValue={today}
-          className="w-48 rounded-lg border border-calm-green/30 px-4 py-3"
-        />
-      </label>
+      {recurrenceType !== "manual" && (
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium text-calm-text/70">
+            {recurrenceType === "none" ? "Date" : "Start date"}
+          </span>
+          <input
+            name="startDate"
+            type="date"
+            required
+            defaultValue={today}
+            className="w-48 rounded-lg border border-calm-green/30 px-4 py-3"
+          />
+        </label>
+      )}
 
-      {recurrenceType !== "none" && (
+      {recurrenceType !== "none" && recurrenceType !== "manual" && (
         <div className="flex flex-wrap gap-4">
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-calm-text/70">End date (optional)</span>
@@ -185,6 +204,50 @@ export default function CreateChoreForm({
               className="w-32 rounded-lg border border-calm-green/30 px-4 py-3"
             />
           </label>
+        </div>
+      )}
+
+      {recurrenceType === "manual" && (
+        <div>
+          <p className="mb-1 text-sm font-medium text-calm-text/70">Dates</p>
+          <div className="flex flex-col gap-2">
+            {manualDates.map((row, i) => (
+              <div key={i} className="flex flex-wrap items-center gap-2">
+                <input
+                  type="date"
+                  name="manualDate"
+                  required
+                  value={row.date}
+                  onChange={(e) => updateManualDate(i, "date", e.target.value)}
+                  className="rounded-lg border border-calm-green/30 px-3 py-2 text-sm"
+                />
+                <input
+                  type="time"
+                  name="manualTime"
+                  value={row.time}
+                  onChange={(e) => updateManualDate(i, "time", e.target.value)}
+                  className="rounded-lg border border-calm-green/30 px-3 py-2 text-sm"
+                  placeholder="Time (optional)"
+                />
+                {manualDates.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeManualDate(i)}
+                    className="text-xs font-medium text-red-600 underline"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={addManualDate}
+            className="mt-2 text-sm font-medium text-calm-green underline"
+          >
+            + Add another date
+          </button>
         </div>
       )}
 

@@ -203,25 +203,39 @@ export default function ManageView({
           <div>
             <p className="mb-2 text-sm font-medium text-calm-text/70">Points History</p>
             {data.ledger.length > 0 ? (
-              <ul className="flex flex-col gap-1.5">
-                {data.ledger.map((row) => (
-                  <li
-                    key={row.id}
-                    className="flex items-center justify-between rounded-lg border border-calm-green/15 bg-white px-3 py-2 text-sm"
-                  >
-                    <div>
-                      <p className="font-medium">{row.description || TYPE_LABELS[row.type] || row.type}</p>
-                      <p className="text-xs text-calm-text/50">
-                        {new Date(row.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <span className={`font-semibold ${row.delta >= 0 ? "text-emerald-700" : "text-red-700"}`}>
-                      {row.delta >= 0 ? "+" : ""}
-                      {row.delta}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <div className="overflow-x-auto rounded-lg border border-calm-green/15 bg-white">
+                <table className="w-full min-w-[420px] text-left text-xs sm:text-sm">
+                  <thead>
+                    <tr className="border-b border-calm-green/15 bg-calm-bg text-calm-text/60">
+                      <th className="whitespace-nowrap px-3 py-2 font-medium">Date</th>
+                      <th className="px-3 py-2 font-medium">Description</th>
+                      <th className="px-3 py-2 font-medium">Type</th>
+                      <th className="px-3 py-2 text-right font-medium">Points</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.ledger.map((row) => (
+                      <tr key={row.id} className="border-b border-calm-green/10 last:border-b-0">
+                        <td className="whitespace-nowrap px-3 py-2 text-calm-text/60">
+                          {new Date(row.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-3 py-2">{row.description || "—"}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-calm-text/60">
+                          {TYPE_LABELS[row.type] ?? row.type}
+                        </td>
+                        <td
+                          className={`whitespace-nowrap px-3 py-2 text-right font-semibold ${
+                            row.delta >= 0 ? "text-emerald-700" : "text-red-700"
+                          }`}
+                        >
+                          {row.delta >= 0 ? "+" : ""}
+                          {row.delta}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <p className="text-sm text-calm-text/60">No points activity yet.</p>
             )}

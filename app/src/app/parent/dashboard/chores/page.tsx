@@ -39,7 +39,7 @@ export default async function ParentChoresPage() {
     supabase
       .from("chores")
       .select(
-        "id, name, info, points, status, assignment_type, requires_proof, chore_instances(id, scheduled_date, scheduled_time, deadline_at, points, chore_assignments(id, child_id, status, awarded_points))"
+        "id, name, info, points, status, assignment_type, requires_proof, recurrence_type, chore_instances(id, scheduled_date, scheduled_time, deadline_at, points, chore_assignments(id, child_id, status, awarded_points))"
       )
       .eq("family_id", parent.family_id)
       .order("name", { ascending: true }),
@@ -73,6 +73,7 @@ export default async function ParentChoresPage() {
     status: c.status,
     assignment_type: c.assignment_type,
     requires_proof: c.requires_proof,
+    recurrence_type: c.recurrence_type,
     instances: (c.chore_instances ?? []).map((inst) => ({
       id: inst.id,
       date: inst.scheduled_date as string,
