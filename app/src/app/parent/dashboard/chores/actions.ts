@@ -420,3 +420,52 @@ export async function deleteChoreInstance(_prevState: unknown, formData: FormDat
   revalidatePath("/parent/dashboard/calendar");
   return { success: true };
 }
+
+// Toggles the current parent's Like on a "Chore Idea from other families"
+// row. chore_likes has no "liked" boolean to flip — presence of the
+// (chore_id, parent_id) row IS the like — so this selects first to decide
+// insert vs delete. chores.like_count stays in sync automatically via the
+// trg_chore_likes_count trigger (already part of the original schema), so
+// there's nothing else to update here.
+export async function toggleChoreLike(_prevState: unknown, formData: FormData) {
+  const choreId = String(formData.get("choreId") || "");
+  if (!choreId) {
+    return { error: "Missing chore." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You must be logged in." };
+  }
+
+  const { data: existing } = await supabase
+    .from("chore_likes")
+    .select("chore_id")
+    .eq("chore_id", choreId)
+    .eq("parent_id", user.id)
+    .maybeSingle();
+
+  if (existing) {
+    const { error: deleteError } = await supabase
+      .from("chore_likes")
+      .delete()
+      .eq("chore_id", choreId)
+      .eq("parent_id", user.id);
+    if (deleteError) {
+      return { error: deleteError.message };
+    }
+  } else {
+    const { error: insertError } = await supabase
+      .from("chore_likes")
+      .insert({ chore_id: choreId, parent_id: user.id });
+    if (insertError) {
+      return { error: insertError.message };
+    }
+  }
+
+  revalidatePath("/parent/dashboard/chores");
+  return { success: true };
+}
