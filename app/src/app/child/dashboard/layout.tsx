@@ -7,6 +7,8 @@ import { getFamilyTimezone } from "@/lib/families";
 import NotificationBell, { type NotificationItem } from "@/components/notifications/NotificationBell";
 import { markChildNotificationRead, markAllChildNotificationsRead } from "./notificationActions";
 import InstallPrompt from "@/components/InstallPrompt";
+import PushSubscribe from "@/components/PushSubscribe";
+import { subscribeChildPush } from "./pushActions";
 
 async function getRecentNotifications(childId: string): Promise<NotificationItem[]> {
   const supabase = createServiceClient();
@@ -83,6 +85,7 @@ export default async function ChildDashboardLayout({
         </div>
       </header>
       <InstallPrompt />
+      <PushSubscribe save={subscribeChildPush} />
       {children}
     </div>
   );

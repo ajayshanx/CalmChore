@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 export type NotificationItem = {
   id: string;
@@ -22,6 +22,25 @@ export default function NotificationBell({
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const unreadCount = notifications.filter((n) => !n.readAt).length;
+
+  // Keeps the home screen icon badge in sync with what's shown here
+  // whenever the app is actually open — this is the "foreground" half of
+  // badging; the service worker's push handler (public/sw.js) covers the
+  // count while the app is closed. Support varies by platform (notably
+  // needs iOS 16.4+ and the app added to the home screen), so this is
+  // best-effort and silently does nothing where unsupported.
+  useEffect(() => {
+    const nav = navigator as Navigator & {
+      setAppBadge?: (count?: number) => Promise<void>;
+      clearAppBadge?: () => Promise<void>;
+    };
+    if (!nav.setAppBadge || !nav.clearAppBadge) return;
+    if (unreadCount > 0) {
+      nav.setAppBadge(unreadCount).catch(() => {});
+    } else {
+      nav.clearAppBadge().catch(() => {});
+    }
+  }, [unreadCount]);
 
   return (
     <div className="relative">

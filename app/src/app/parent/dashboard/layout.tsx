@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import NotificationBell, { type NotificationItem } from "@/components/notifications/NotificationBell";
 import { markNotificationRead, markAllNotificationsRead } from "./notificationActions";
 import InstallPrompt from "@/components/InstallPrompt";
+import PushSubscribe from "@/components/PushSubscribe";
+import { subscribeParentPush } from "./pushActions";
 
 async function getNavData(): Promise<{
   notifications: NotificationItem[];
@@ -74,6 +76,7 @@ export default async function ParentDashboardLayout({
         </div>
       </header>
       <InstallPrompt />
+      <PushSubscribe save={subscribeParentPush} />
       {children}
     </div>
   );

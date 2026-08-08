@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { NotificationAction } from "@/lib/notificationCatalog";
+import { ACTION_LABELS, type NotificationAction } from "@/lib/notificationCatalog";
+import { sendPushToParent, sendPushToChild } from "@/lib/webpush/send";
 
 // Re-exported so existing server-side importers of "@/lib/notifications"
 // keep working unchanged — only client components need to import the
@@ -38,6 +39,12 @@ export async function notifyParent(supabase: SupabaseClient, params: NotifyParen
     message: params.message,
     link: params.link ?? null,
   });
+
+  // Push shares the same in-app preference for now (no separate toggle).
+  // Awaited (not fire-and-forget) because this runs inside a serverless
+  // function — an un-awaited promise can be cut off once the response is
+  // sent. sendPushToParent never throws, so this can't fail the caller.
+  await sendPushToParent(params.parentId, ACTION_LABELS[params.action], params.message, params.link);
 }
 
 // Notifies every active parent on the account — used when an event (e.g. a
@@ -87,4 +94,8 @@ export async function notifyChild(supabase: SupabaseClient, params: NotifyChildP
     message: params.message,
     link: params.link ?? null,
   });
+
+  // See notifyParent — same reasoning for awaiting rather than firing and
+  // forgetting inside a serverless function.
+  await sendPushToChild(params.childId, ACTION_LABELS[params.action], params.message, params.link);
 }
