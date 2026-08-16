@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getChildSession } from "@/lib/childSession";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getTierStatus } from "@/lib/tiers";
-import { advanceStreakThrough } from "@/lib/points/streakEngine";
+import { advanceStreakThrough, getFreezesRemainingThisWeek } from "@/lib/points/streakEngine";
 import { getFamilyTimezone } from "@/lib/families";
 import { addDaysStr, todayStrInTimezone } from "@/lib/chores/calendarDates";
 import PointsView, { type LedgerRow, type FreezeRow } from "./PointsView";
@@ -21,7 +21,8 @@ export default async function PointsPage() {
   // Same no-cron catch-up as the Home page — keeps streak/freeze/bonus state
   // current even if nothing's been validated recently.
   const timezone = await getFamilyTimezone(supabase, session.familyId);
-  const yesterday = addDaysStr(todayStrInTimezone(timezone), -1);
+  const today = todayStrInTimezone(timezone);
+  const yesterday = addDaysStr(today, -1);
   await advanceStreakThrough(supabase, session.childId, yesterday);
 
   const [{ data: streak }, { data: ledgerRows }, { data: assignmentRows }, { data: freezeRows }] =
@@ -53,6 +54,12 @@ export default async function PointsPage() {
   const totalOngoing = (assignmentRows ?? []).filter((r) => ONGOING_STATUSES.includes(r.status)).length;
 
   const tier = getTierStatus(streak?.current_streak_days ?? 0);
+  const { remaining: freezesRemaining, cap: freezeCap } = await getFreezesRemainingThisWeek(
+    supabase,
+    session.childId,
+    tier.tierName,
+    today
+  );
 
   const ledger: LedgerRow[] = (ledgerRows ?? []).map((row) => ({
     id: row.id,
@@ -80,6 +87,8 @@ export default async function PointsPage() {
         tier={tier}
         ledger={ledger}
         freezes={freezes}
+        freezesRemaining={freezesRemaining}
+        freezeCap={freezeCap}
       />
     </main>
   );

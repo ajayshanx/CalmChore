@@ -4,7 +4,7 @@ import { getChildSession } from "@/lib/childSession";
 import { createServiceClient } from "@/lib/supabase/service";
 import { tierChipClass, getTierStatus } from "@/lib/tiers";
 import TierShield from "@/components/icons/TierShield";
-import { advanceStreakThrough } from "@/lib/points/streakEngine";
+import { advanceStreakThrough, getFreezesRemainingThisWeek } from "@/lib/points/streakEngine";
 import { getFamilyTimezone } from "@/lib/families";
 import { addDaysStr, todayStrInTimezone } from "@/lib/chores/calendarDates";
 import FreezeBanner from "./FreezeBanner";
@@ -21,7 +21,8 @@ export default async function ChildDashboardPage() {
   // (auto-freezes, breaks, the Weekly Streak Bonus) right here so the
   // streak/tier shown below stays fresh even without a recent validation.
   const timezone = await getFamilyTimezone(supabase, session.familyId);
-  const yesterday = addDaysStr(todayStrInTimezone(timezone), -1);
+  const today = todayStrInTimezone(timezone);
+  const yesterday = addDaysStr(today, -1);
   await advanceStreakThrough(supabase, session.childId, yesterday);
 
   const [{ data: streak }, { data: unackedFreezeRows }] = await Promise.all([
@@ -46,6 +47,16 @@ export default async function ChildDashboardPage() {
     freezeTo: row.freeze_to,
   }));
 
+  // Computed after the tier above, since the weekly cap is tier-dependent —
+  // see getFreezesRemainingThisWeek for why this mirrors the streak
+  // engine's own enforcement rule rather than an independent count.
+  const { remaining: freezesRemaining, cap: freezeCap } = await getFreezesRemainingThisWeek(
+    supabase,
+    session.childId,
+    tier.tierName,
+    today
+  );
+
   return (
     <main className="flex min-h-[calc(100vh-65px)] flex-col items-center justify-center gap-4 px-6 text-center">
       <FreezeBanner freezes={unackedFreezes} />
@@ -64,6 +75,12 @@ export default async function ChildDashboardPage() {
       >
         <TierShield tierName={tier.tierName} level={tier.level} weapon={tier.weapon} size={18} />
         {tier.tierName} · Level {tier.level}
+      </Link>
+      <Link
+        href="/child/dashboard/points"
+        className="text-sm text-calm-text/60 underline decoration-calm-green/30 underline-offset-2"
+      >
+        ❄️ {freezesRemaining} of {freezeCap} freeze{freezeCap === 1 ? "" : "s"} left this week
       </Link>
       <p className="max-w-sm text-calm-text/70">Keep completing chores to grow your streak!</p>
     </main>

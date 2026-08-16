@@ -67,6 +67,8 @@ export default function PointsView({
   tier,
   ledger,
   freezes,
+  freezesRemaining,
+  freezeCap,
 }: {
   totalCompleted: number;
   totalOngoing: number;
@@ -74,6 +76,8 @@ export default function PointsView({
   tier: TierStatus;
   ledger: LedgerRow[];
   freezes: FreezeRow[];
+  freezesRemaining: number;
+  freezeCap: number;
 }) {
   const [tab, setTab] = useState<"points" | "freezes">("points");
 
@@ -95,6 +99,17 @@ export default function PointsView({
 
       {tab === "freezes" ? (
         <div className="flex flex-col gap-4">
+          <div className={`rounded-xl px-5 py-4 ${tierChipClass(tier.tierName)}`}>
+            <p className="text-lg font-semibold">
+              ❄️ {freezesRemaining} of {freezeCap} freeze{freezeCap === 1 ? "" : "s"} left this
+              week
+            </p>
+            <p className="mt-1 text-sm opacity-80">
+              Resets Monday. Counts both auto-applied freezes and any multi-day freeze a parent
+              has approved.
+            </p>
+          </div>
+
           <p className="text-sm text-calm-text/60">
             A freeze protects your streak on a day you couldn&apos;t get to your chores. One is
             used automatically when a day is missed, if your tier still has one free for the

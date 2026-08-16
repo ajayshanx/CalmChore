@@ -4,6 +4,35 @@ import { addDaysStr, mondayWeekStart } from "@/lib/chores/calendarDates";
 import { getTierStatus, getWeeklyFreeFreezeCap } from "@/lib/tiers";
 import { maybeAwardWeeklyStreakBonus } from "@/lib/points/weeklyBonus";
 
+// How many of this week's free freezes (per getWeeklyFreeFreezeCap, keyed
+// off the child's *current* tier) are still unused, as of `today`. Mirrors
+// the exact rule the auto-freeze step below enforces — same week window
+// (Mon-Sun), same statuses counted (auto_applied + approved; a pending
+// request hasn't actually consumed a slot yet, matching the enforcement
+// logic, not just the display). Used by both the child dashboard home page
+// and the Points > Chore Freezes tab so kids can see this before they hit
+// the cap rather than only finding out when a request gets declined.
+export async function getFreezesRemainingThisWeek(
+  supabase: SupabaseClient,
+  childId: string,
+  tierName: string,
+  today: string
+): Promise<{ remaining: number; cap: number }> {
+  const cap = getWeeklyFreeFreezeCap(tierName);
+  const weekMonday = mondayWeekStart(today);
+  const weekSunday = addDaysStr(weekMonday, 6);
+
+  const { count } = await supabase
+    .from("chore_freezes")
+    .select("id", { count: "exact", head: true })
+    .eq("child_id", childId)
+    .in("status", ["auto_applied", "approved"])
+    .gte("freeze_from", weekMonday)
+    .lte("freeze_from", weekSunday);
+
+  return { remaining: Math.max(0, cap - (count ?? 0)), cap };
+}
+
 // Resolves each already-passed day for a child as one of:
 //  - "break"   — covered by an active Chore Break for this child; protects
 //                the streak independently of freezes, and (per spec) is not
