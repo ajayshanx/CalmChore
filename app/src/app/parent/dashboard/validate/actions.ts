@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { advanceStreakThrough } from "@/lib/points/streakEngine";
+import { advanceStreakThrough, reverseAutoFreezeForLateCompletion } from "@/lib/points/streakEngine";
 import { notifyChild } from "@/lib/notifications";
 
 type Outcome = "verified_complete" | "verified_partially_complete" | "incomplete";
@@ -142,14 +142,20 @@ export async function validateChoreAssignment(_prevState: unknown, formData: For
   }
 
   // A validated Complete or Partially Complete counts as "did a chore" for
-  // that instance's scheduled day, driving the child's streak. The engine
-  // also reconciles any earlier unresolved gap days along the way — via an
-  // automatic Chore Freeze where the week's free-freeze cap allows it, or a
-  // genuine break where it doesn't — and posts the Weekly Streak Bonus for
-  // any Mon-Sun week that turns out complete as a result.
+  // that instance's scheduled day, driving the child's streak — the
+  // scheduled date, not whenever it happened to be submitted/validated, so a
+  // chore logged late (e.g. forgotten on the day and caught up the next
+  // morning against the correct date) still counts for the day it was
+  // actually done. If that day was already walked past and auto-froze in
+  // the meantime, return the freeze first since it turned out not to be
+  // needed. The engine also reconciles any earlier unresolved gap days along
+  // the way — via an automatic Chore Freeze where the week's free-freeze cap
+  // allows it, or a genuine break where it doesn't — and posts the Weekly
+  // Streak Bonus for any Mon-Sun week that turns out complete as a result.
   if (outcome === "verified_complete" || outcome === "verified_partially_complete") {
     const day = instance?.scheduled_date;
     if (day) {
+      await reverseAutoFreezeForLateCompletion(supabase, assignment.child_id, day);
       await advanceStreakThrough(supabase, assignment.child_id, day);
     }
   }

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { advanceStreakThrough } from "@/lib/points/streakEngine";
+import { advanceStreakThrough, reverseAutoFreezeForLateCompletion } from "@/lib/points/streakEngine";
 
 function revalidateAffectedPaths() {
   revalidatePath("/parent/dashboard/manage");
@@ -187,6 +187,10 @@ export async function markChoreDone(_prevState: unknown, formData: FormData) {
 
   if (outcome === "verified_complete" || outcome === "verified_partially_complete") {
     if (instance.scheduled_date) {
+      // Same late-logging rule as validate/actions.ts — counts for the
+      // scheduled day, returning any freeze wrongly auto-consumed while the
+      // catch-up entry hadn't been recorded yet.
+      await reverseAutoFreezeForLateCompletion(supabase, childId, instance.scheduled_date);
       await advanceStreakThrough(supabase, childId, instance.scheduled_date);
     }
   }

@@ -33,6 +33,43 @@ export async function getFreezesRemainingThisWeek(
   return { remaining: Math.max(0, cap - (count ?? 0)), cap };
 }
 
+// A chore validated for a day that's already been walked past (before the
+// child's last_counted_date) means that day was actually completed — just
+// submitted/approved late (e.g. a kid forgot to log a chore on the day and
+// caught up the next morning, picking the correct scheduled date). If the
+// walk had already resolved that exact day as "missed" and auto-consumed a
+// Chore Freeze for it, that freeze was spent in error — this returns it by
+// deleting the auto-applied row, matching classifyDay's own rule that any
+// one validated chore for a day makes it "good" (a freeze was never really
+// needed). Deliberately narrow: this does not attempt to un-break a streak
+// that already hit zero because the week's free-freeze cap was exhausted —
+// that would require replaying every day since, which this app's
+// one-directional walk (see advanceStreakThrough below) doesn't support.
+// Call this alongside advanceStreakThrough on every validation write path.
+export async function reverseAutoFreezeForLateCompletion(
+  supabase: SupabaseClient,
+  childId: string,
+  day: string
+): Promise<void> {
+  const { data: streakRow } = await supabase
+    .from("child_streaks")
+    .select("last_counted_date")
+    .eq("child_id", childId)
+    .maybeSingle();
+
+  // Only a day the walk has already resolved counts as "late" — anything
+  // else is handled by the normal forward walk in advanceStreakThrough.
+  if (!streakRow?.last_counted_date || day > streakRow.last_counted_date) return;
+
+  await supabase
+    .from("chore_freezes")
+    .delete()
+    .eq("child_id", childId)
+    .eq("status", "auto_applied")
+    .eq("freeze_from", day)
+    .eq("freeze_to", day);
+}
+
 // Resolves each already-passed day for a child as one of:
 //  - "break"   — covered by an active Chore Break for this child; protects
 //                the streak independently of freezes, and (per spec) is not
