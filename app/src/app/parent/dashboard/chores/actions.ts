@@ -573,12 +573,24 @@ export async function searchChoreIdeas(query: string): Promise<{ results: ChoreI
     return { results: [], error: "Search is temporarily unavailable." };
   }
 
+  // match_chores isn't in the generated Supabase types (it's a hand-written
+  // RPC, not a table), so .rpc() can't infer its return shape on its own —
+  // spell it out here rather than letting `matches` fall back to `any`.
+  type MatchChoreRow = {
+    id: string;
+    name: string;
+    info: string | null;
+    points: number;
+    like_count: number;
+    similarity: number;
+  };
+
   const { data: matches, error } = await supabase.rpc("match_chores", {
     query_embedding: embedding,
     match_count: 15,
     min_similarity: 0.15,
     exclude_family_id: parent.family_id,
-  });
+  }) as { data: MatchChoreRow[] | null; error: { message: string } | null };
   if (error) {
     return { results: [], error: error.message };
   }
@@ -586,7 +598,7 @@ export async function searchChoreIdeas(query: string): Promise<{ results: ChoreI
   const { data: myLikes } = await supabase.from("chore_likes").select("chore_id").eq("parent_id", user.id);
   const likedChoreIds = new Set((myLikes ?? []).map((l) => l.chore_id));
 
-  const results: ChoreIdeaSearchResult[] = (matches ?? []).map((m) => ({
+  const results: ChoreIdeaSearchResult[] = (matches ?? []).map((m: MatchChoreRow) => ({
     id: m.id,
     name: m.name,
     info: m.info,
