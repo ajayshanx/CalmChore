@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import CreateChoreForm, { type ChorePrefill } from "./CreateChoreForm";
 import ChoreDetailPopup from "./ChoreDetailPopup";
 import ChoreIdeaCard from "./ChoreIdeaCard";
 import AlphaChoreList from "./AlphaChoreList";
 import FaceIcon, { type FaceStatus } from "@/components/icons/FaceIcon";
 import { AGE_GROUPS, EXAMPLE_CHORES } from "@/lib/chores/exampleChores";
+import { searchChoreIdeas, type ChoreIdeaSearchResult } from "./actions";
 
 export type InstanceAssignment = {
   childId: string;
@@ -123,6 +124,10 @@ export default function ChoresView({
   const [ageFilter, setAgeFilter] = useState<string>("all");
   const [ideasView, setIdeasView] = useState<"popular" | "all">("popular");
   const [selectedChoreId, setSelectedChoreId] = useState<string | null>(null);
+  const [ideaSearch, setIdeaSearch] = useState("");
+  const [searchResults, setSearchResults] = useState<ChoreIdeaSearchResult[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   // Derived from the live `chores` prop (rather than snapshotted at click
   // time) so the popup reflects a just-saved edit once the route refreshes,
   // instead of showing stale values from before the save.
@@ -161,6 +166,32 @@ export default function ChoresView({
     if (ideasView === "popular") return choreIdeas.slice(0, MOST_POPULAR_LIMIT);
     return [...choreIdeas].sort((a, b) => a.name.localeCompare(b.name));
   }, [choreIdeas, ideasView]);
+
+  // Debounced semantic search over "Chore Ideas from Other Families" — each
+  // keystroke re-embeds via the searchChoreIdeas server action, so this
+  // waits 400ms after typing stops rather than firing on every character.
+  // requestId guards against an earlier, slower request overwriting a
+  // later one's results if they resolve out of order.
+  const searchRequestId = useRef(0);
+  useEffect(() => {
+    const query = ideaSearch.trim();
+    if (!query) {
+      setSearchResults(null);
+      setSearchError(null);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const thisRequestId = ++searchRequestId.current;
+    const timer = setTimeout(async () => {
+      const { results, error } = await searchChoreIdeas(query);
+      if (thisRequestId !== searchRequestId.current) return; // superseded by a newer keystroke
+      setSearchResults(results);
+      setSearchError(error ?? null);
+      setSearching(false);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [ideaSearch]);
 
   function openCreate(p?: ChorePrefill) {
     setPrefill(p);
@@ -340,26 +371,56 @@ export default function ChoresView({
           <div>
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm font-semibold text-calm-green">Chore Ideas from Other Families</p>
-              <div className="flex gap-1 rounded-lg border border-calm-green/20 p-0.5">
-                <button
-                  onClick={() => setIdeasView("popular")}
-                  className={`rounded-md px-3 py-1 text-xs font-medium ${
-                    ideasView === "popular" ? "bg-calm-green text-white" : "text-calm-green"
-                  }`}
-                >
-                  Most Popular
-                </button>
-                <button
-                  onClick={() => setIdeasView("all")}
-                  className={`rounded-md px-3 py-1 text-xs font-medium ${
-                    ideasView === "all" ? "bg-calm-green text-white" : "text-calm-green"
-                  }`}
-                >
-                  View All
-                </button>
-              </div>
+              {!ideaSearch && (
+                <div className="flex gap-1 rounded-lg border border-calm-green/20 p-0.5">
+                  <button
+                    onClick={() => setIdeasView("popular")}
+                    className={`rounded-md px-3 py-1 text-xs font-medium ${
+                      ideasView === "popular" ? "bg-calm-green text-white" : "text-calm-green"
+                    }`}
+                  >
+                    Most Popular
+                  </button>
+                  <button
+                    onClick={() => setIdeasView("all")}
+                    className={`rounded-md px-3 py-1 text-xs font-medium ${
+                      ideasView === "all" ? "bg-calm-green text-white" : "text-calm-green"
+                    }`}
+                  >
+                    View All
+                  </button>
+                </div>
+              )}
             </div>
-            {visibleOtherFamilyIdeas.length > 0 ? (
+
+            <input
+              value={ideaSearch}
+              onChange={(e) => setIdeaSearch(e.target.value)}
+              placeholder="Search by what you need done, e.g. “help keep the kitchen tidy”…"
+              className="mb-3 w-full rounded-lg border border-calm-green/30 px-4 py-2.5"
+            />
+
+            {ideaSearch ? (
+              searching ? (
+                <p className="text-sm text-calm-text/60">Searching…</p>
+              ) : searchError ? (
+                <p className="text-sm text-red-600">{searchError}</p>
+              ) : searchResults && searchResults.length > 0 ? (
+                <ul className="flex flex-col gap-2">
+                  {searchResults.map((idea) => (
+                    <ChoreIdeaCard
+                      key={idea.id}
+                      idea={idea}
+                      onAdd={() => openCreate({ name: idea.name, info: idea.info ?? "", points: idea.points })}
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-calm-text/60">
+                  No close matches. Try describing the chore differently, or browse below.
+                </p>
+              )
+            ) : visibleOtherFamilyIdeas.length > 0 ? (
               <ul className="flex flex-col gap-2">
                 {visibleOtherFamilyIdeas.map((idea) => (
                   <ChoreIdeaCard

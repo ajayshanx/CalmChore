@@ -1,11 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { generateInstanceDates, type RecurrenceType } from "@/lib/chores/schedule";
 import { notifyChild } from "@/lib/notifications";
 import { todayStrInTimezone } from "@/lib/chores/calendarDates";
 import { getFamilyTimezone } from "@/lib/families";
+import { embedText, choreEmbeddingText } from "@/lib/embeddings";
 
 const RECURRENCE_TYPES: RecurrenceType[] = ["none", "daily", "weekly", "monthly", "manual"];
 const CHORE_STATUSES = ["active", "inactive"];
@@ -91,6 +93,20 @@ export async function createChore(_prevState: unknown, formData: FormData) {
   if (choreError || !chore) {
     return { error: choreError?.message || "Could not create the chore." };
   }
+
+  // Best-effort — powers semantic search over the cross-family Chore Ideas
+  // library (see match_chores RPC). Runs via next/server's after() rather
+  // than a bare unawaited promise, since Vercel can freeze the serverless
+  // function the instant the action returns — an un-awaited fetch could get
+  // cut off mid-request otherwise. Failure here shouldn't block chore
+  // creation itself; the chore just won't show up in semantic search until
+  // a later edit or backfill retries it.
+  after(async () => {
+    const embedding = await embedText(choreEmbeddingText(name, info || null));
+    if (embedding) {
+      await supabase.from("chores").update({ embedding }).eq("id", chore.id);
+    }
+  });
 
   const instanceRows =
     recurrenceType === "manual"
@@ -228,6 +244,15 @@ export async function updateChore(_prevState: unknown, formData: FormData) {
   if (error) {
     return { error: error.message };
   }
+
+  // Keep the embedding in sync with whatever name/info was just saved — see
+  // the matching comment in createChore above.
+  after(async () => {
+    const embedding = await embedText(choreEmbeddingText(name, info || null));
+    if (embedding) {
+      await supabase.from("chores").update({ embedding }).eq("id", choreId);
+    }
+  });
 
   revalidatePath("/parent/dashboard/chores");
   revalidatePath("/parent/dashboard/calendar");
@@ -504,4 +529,72 @@ export async function toggleChoreLike(_prevState: unknown, formData: FormData) {
 
   revalidatePath("/parent/dashboard/chores");
   return { success: true };
+}
+
+export type ChoreIdeaSearchResult = {
+  id: string;
+  name: string;
+  info: string | null;
+  points: number;
+  likeCount: number;
+  likedByMe: boolean;
+  similarity: number;
+};
+
+// Semantic search over "Chore Ideas from Other Families" — embeds the
+// parent's free-text query and calls the match_chores RPC (see
+// add_chore_embeddings / match_chores_exclude_family migrations), which
+// runs under this parent's own RLS just like the plain browse query does.
+// Plain data fetch, not a form action, called directly from ChoresView the
+// same way listChoreInstances is.
+export async function searchChoreIdeas(query: string): Promise<{ results: ChoreIdeaSearchResult[]; error?: string }> {
+  const trimmed = query.trim();
+  if (!trimmed) return { results: [] };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { results: [], error: "You must be logged in." };
+  }
+
+  const { data: parent } = await supabase
+    .from("parents")
+    .select("family_id")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!parent) {
+    return { results: [], error: "Could not find your family." };
+  }
+
+  const embedding = await embedText(trimmed);
+  if (!embedding) {
+    return { results: [], error: "Search is temporarily unavailable." };
+  }
+
+  const { data: matches, error } = await supabase.rpc("match_chores", {
+    query_embedding: embedding,
+    match_count: 15,
+    min_similarity: 0.15,
+    exclude_family_id: parent.family_id,
+  });
+  if (error) {
+    return { results: [], error: error.message };
+  }
+
+  const { data: myLikes } = await supabase.from("chore_likes").select("chore_id").eq("parent_id", user.id);
+  const likedChoreIds = new Set((myLikes ?? []).map((l) => l.chore_id));
+
+  const results: ChoreIdeaSearchResult[] = (matches ?? []).map((m) => ({
+    id: m.id,
+    name: m.name,
+    info: m.info,
+    points: m.points,
+    likeCount: m.like_count,
+    likedByMe: likedChoreIds.has(m.id),
+    similarity: m.similarity,
+  }));
+
+  return { results };
 }
