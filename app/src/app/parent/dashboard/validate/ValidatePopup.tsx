@@ -49,6 +49,20 @@ export default function ValidatePopup({
             <dt className="text-calm-text/50">Nickname</dt>
             <dd>{row.childLabel}</dd>
           </div>
+          {row.scheduledDate && (
+            <div className="flex justify-between">
+              <dt className="text-calm-text/50">Chore Date</dt>
+              <dd className={row.dateFlag ? "font-medium text-amber-700" : undefined}>
+                {new Date(`${row.scheduledDate}T00:00:00Z`).toLocaleDateString(undefined, {
+                  timeZone: "UTC",
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })}
+                {row.dateFlag === "late" ? " ⚠ late" : row.dateFlag === "early" ? " ⚠ early" : ""}
+              </dd>
+            </div>
+          )}
           {row.submittedAt && (
             <div className="flex justify-between">
               <dt className="text-calm-text/50">Submitted On</dt>

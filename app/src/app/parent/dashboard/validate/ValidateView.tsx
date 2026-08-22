@@ -11,10 +11,20 @@ export type ValidationRow = {
   choreName: string;
   childLabel: string;
   submittedAt: string | null;
+  scheduledDate: string | null;
+  dateFlag: "late" | "early" | null;
   deadlineAt: string | null;
   points: number;
   photoUrl: string | null;
 };
+
+function formatScheduledDate(dateStr: string) {
+  return new Date(`${dateStr}T00:00:00Z`).toLocaleDateString(undefined, {
+    timeZone: "UTC",
+    month: "short",
+    day: "numeric",
+  });
+}
 
 export type FreezeRequestRow = {
   freezeId: string;
@@ -62,6 +72,12 @@ export default function ValidateView({
                   {row.childLabel} · {row.points} pt{row.points === 1 ? "" : "s"}
                   {row.submittedAt ? ` · Submitted ${new Date(row.submittedAt).toLocaleDateString()}` : ""}
                 </p>
+                {row.scheduledDate && row.dateFlag && (
+                  <p className="mt-0.5 text-sm font-medium text-amber-700">
+                    ⚠ For {formatScheduledDate(row.scheduledDate)}
+                    {row.dateFlag === "late" ? " — submitted late" : " — submitted early"}
+                  </p>
+                )}
               </button>
             </li>
           ))}
