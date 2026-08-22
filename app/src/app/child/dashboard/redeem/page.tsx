@@ -7,6 +7,7 @@ import { REDEMPTION_CATEGORIES, type RedemptionCategory } from "@/lib/redemption
 import {
   averagePointsPerDay,
   lastRedeemedByTier,
+  pastPointsUsedByTier,
   getRedemptionGuidance,
   type RedemptionGuidance,
 } from "@/lib/redemptionGuidance";
@@ -48,8 +49,18 @@ export default async function RedeemPage() {
       createdAt: r.created_at,
     }))
   );
+  const pastPointsByTier = pastPointsUsedByTier(
+    (requestRows ?? []).map((r) => ({
+      category: r.category,
+      status: r.status,
+      pointsUsed: r.points_used,
+    }))
+  );
   const guidanceByCategory = Object.fromEntries(
-    REDEMPTION_CATEGORIES.map((c) => [c, getRedemptionGuidance(c, avgPtsPerDay, lastByTier, today)])
+    REDEMPTION_CATEGORIES.map((c) => [
+      c,
+      getRedemptionGuidance(c, avgPtsPerDay, lastByTier, pastPointsByTier, today),
+    ])
   ) as Record<RedemptionCategory, RedemptionGuidance>;
 
   const requests: RedemptionRow[] = (requestRows ?? []).map((row) => ({

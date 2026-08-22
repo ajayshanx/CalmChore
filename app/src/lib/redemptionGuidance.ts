@@ -3,11 +3,19 @@ import type { RedemptionCategory } from "./redemption";
 // Redemption pacing guidance — not in the original 4 spec files, added per
 // product discussion: parents set points-per-chore themselves, so a fixed
 // point number ("costs 50 points") wouldn't mean the same thing across
-// families, or even across the same child's account as chore values change.
-// Guidance is instead expressed relative to the child's own recent earning
-// rate, and is purely informational everywhere it's shown — it never blocks
-// a child from submitting a request or a parent from approving one; it just
-// gives both sides the same numbers to reason with.
+// families. Guidance is purely informational everywhere it's shown — it
+// never blocks a child from submitting a request or a parent from approving
+// one; it just gives both sides the same numbers to reason with.
+//
+// The point range is based on what this child has actually redeemed for
+// similar things before (real precedent), not on how fast they're currently
+// earning — an earlier version scaled the range off recent earning pace,
+// which meant a kid doing more chores got told treats "usually cost" more
+// points, a backwards incentive flagged during product review. Earning pace
+// is now only used as a one-time cold-start estimate, before any redemption
+// history exists for that tier — once a child has redeemed anything in a
+// tier, the guidance is driven entirely by that history and no longer moves
+// just because they did more chores.
 
 export type RedemptionTier = "everyday" | "outing" | "big";
 
@@ -87,26 +95,56 @@ export type RedemptionGuidance = {
   tier: RedemptionTier;
   cadenceLabel: string;
   pointRange: [number, number] | null;
+  // "history" = pointRange reflects what this child actually redeemed for
+  // similar things before (real precedent, doesn't move with earning pace).
+  // "estimate" = cold-start fallback, used only when no redemption history
+  // exists yet for this tier.
+  basis: "history" | "estimate";
   daysSinceLast: number | null;
 };
+
+// Points actually spent on past *approved* redemptions, grouped by tier —
+// the real precedent that now drives the guidance range. Only approved
+// requests count (pending/rejected ones don't reflect an agreed price).
+export function pastPointsUsedByTier(
+  requests: { category: string; status: string; pointsUsed: number | null }[]
+): Record<RedemptionTier, number[]> {
+  const result: Record<RedemptionTier, number[]> = { everyday: [], outing: [], big: [] };
+  for (const r of requests) {
+    if (r.status !== "approved" || r.pointsUsed == null) continue;
+    const tier = CATEGORY_TIER[r.category as RedemptionCategory];
+    if (!tier) continue;
+    result[tier].push(r.pointsUsed);
+  }
+  return result;
+}
 
 export function getRedemptionGuidance(
   category: RedemptionCategory,
   avgPtsPerDay: number,
   lastByTier: Record<RedemptionTier, string | null>,
+  pastPointsByTier: Record<RedemptionTier, number[]>,
   today: string
 ): RedemptionGuidance {
   const tier = CATEGORY_TIER[category];
   const info = TIER_INFO[tier];
   const lastRedeemedAt = lastByTier[tier];
+  const pastValues = pastPointsByTier[tier] ?? [];
 
-  const pointRange: [number, number] | null =
-    info.minDaysWorth != null && info.maxDaysWorth != null && avgPtsPerDay > 0
-      ? [
-          Math.max(1, Math.round(info.minDaysWorth * avgPtsPerDay)),
-          Math.max(1, Math.round(info.maxDaysWorth * avgPtsPerDay)),
-        ]
-      : null;
+  let pointRange: [number, number] | null = null;
+  let basis: "history" | "estimate" = "estimate";
+
+  if (pastValues.length > 0) {
+    basis = "history";
+    const min = Math.min(...pastValues);
+    const max = Math.max(...pastValues);
+    pointRange = [min, max];
+  } else if (info.minDaysWorth != null && info.maxDaysWorth != null && avgPtsPerDay > 0) {
+    pointRange = [
+      Math.max(1, Math.round(info.minDaysWorth * avgPtsPerDay)),
+      Math.max(1, Math.round(info.maxDaysWorth * avgPtsPerDay)),
+    ];
+  }
 
   const daysSinceLast = lastRedeemedAt
     ? Math.max(
@@ -115,19 +153,26 @@ export function getRedemptionGuidance(
       )
     : null;
 
-  return { tier, cadenceLabel: info.cadenceLabel, pointRange, daysSinceLast };
+  return { tier, cadenceLabel: info.cadenceLabel, pointRange, basis, daysSinceLast };
 }
 
 function recencyPhrase(daysSinceLast: number): string {
   return daysSinceLast === 0 ? "today" : `${daysSinceLast} day${daysSinceLast === 1 ? "" : "s"} ago`;
 }
 
+function formatPointRange(range: [number, number]): string {
+  return range[0] === range[1] ? `about ${range[0]} points` : `about ${range[0]}–${range[1]} points`;
+}
+
 // Child-facing: second person, casual.
 export function formatGuidanceForChild(guidance: RedemptionGuidance): string {
   const costPart = guidance.pointRange
-    ? `usually costs about ${guidance.pointRange[0]}–${guidance.pointRange[1]} points`
+    ? `usually costs ${formatPointRange(guidance.pointRange)}`
     : "tends to be a bigger ask";
   let text = `This kind of request ${costPart} and comes up ${guidance.cadenceLabel}.`;
+  if (guidance.pointRange && guidance.basis === "estimate") {
+    text += " (Just a starting estimate — you haven't redeemed this kind of thing before.)";
+  }
   if (guidance.daysSinceLast != null) {
     text += ` You last redeemed this kind of thing ${recencyPhrase(guidance.daysSinceLast)}.`;
   }
@@ -137,9 +182,12 @@ export function formatGuidanceForChild(guidance: RedemptionGuidance): string {
 // Parent-facing: names the child, shown in the approval card.
 export function formatGuidanceForParent(childLabel: string, guidance: RedemptionGuidance): string {
   const costPart = guidance.pointRange
-    ? `usually costs about ${guidance.pointRange[0]}–${guidance.pointRange[1]} points`
+    ? `usually costs ${formatPointRange(guidance.pointRange)}`
     : "tends to be a bigger ask";
   let text = `${childLabel}'s requests like this ${costPart} and come up ${guidance.cadenceLabel}.`;
+  if (guidance.pointRange && guidance.basis === "estimate") {
+    text += " (Starting estimate — no past redemptions in this category yet.)";
+  }
   if (guidance.daysSinceLast != null) {
     text += ` Last approved ${recencyPhrase(guidance.daysSinceLast)}.`;
   }

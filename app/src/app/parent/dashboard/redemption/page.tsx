@@ -6,6 +6,7 @@ import type { RedemptionCategory } from "@/lib/redemption";
 import {
   averagePointsPerDay,
   lastRedeemedByTier,
+  pastPointsUsedByTier,
   getRedemptionGuidance,
   type RedemptionTier,
 } from "@/lib/redemptionGuidance";
@@ -70,23 +71,31 @@ export default async function RedemptionPage() {
 
   const requestsByChild = new Map<
     string,
-    { category: string; status: string; decidedAt: string | null; createdAt: string }[]
+    { category: string; status: string; decidedAt: string | null; createdAt: string; pointsUsed: number | null }[]
   >();
   for (const row of requestRows ?? []) {
     const arr = requestsByChild.get(row.child_id) ?? [];
-    arr.push({ category: row.category, status: row.status, decidedAt: row.decided_at, createdAt: row.created_at });
+    arr.push({
+      category: row.category,
+      status: row.status,
+      decidedAt: row.decided_at,
+      createdAt: row.created_at,
+      pointsUsed: row.points_used,
+    });
     requestsByChild.set(row.child_id, arr);
   }
 
   // Redemption pacing guidance, computed per child (each child has their
-  // own earning rate and redemption history) — see
-  // lib/redemptionGuidance.ts for why this is relative rather than a fixed
-  // point number.
+  // own earning rate and redemption history) — see lib/redemptionGuidance.ts
+  // for why the point range is driven by each child's own past redemptions
+  // per tier, with earning pace used only as a cold-start fallback.
   const avgPtsPerDayByChild = new Map<string, number>();
   const lastByTierByChild = new Map<string, Record<RedemptionTier, string | null>>();
+  const pastPointsByTierByChild = new Map<string, Record<RedemptionTier, number[]>>();
   for (const childId of childIds) {
     avgPtsPerDayByChild.set(childId, averagePointsPerDay(ledgerByChild.get(childId) ?? [], today));
     lastByTierByChild.set(childId, lastRedeemedByTier(requestsByChild.get(childId) ?? []));
+    pastPointsByTierByChild.set(childId, pastPointsUsedByTier(requestsByChild.get(childId) ?? []));
   }
 
   const requests: RedemptionRequestRow[] = (requestRows ?? []).map((row) => ({
@@ -104,6 +113,7 @@ export default async function RedemptionPage() {
       row.category as RedemptionCategory,
       avgPtsPerDayByChild.get(row.child_id) ?? 0,
       lastByTierByChild.get(row.child_id) ?? { everyday: null, outing: null, big: null },
+      pastPointsByTierByChild.get(row.child_id) ?? { everyday: [], outing: [], big: [] },
       today
     ),
   }));
