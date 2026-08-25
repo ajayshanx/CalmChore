@@ -134,13 +134,32 @@ function hasOngoingAssignment(chore: ChoreRow): boolean {
 // "information that shows should be related to the current instance of the
 // chore (if not verified complete or partially complete) OR the next
 // instance of the chore" — Parent Login Options.txt, Chores tab.
-function displayInstance(chore: ChoreRow): ChoreInstanceSummary | null {
+//
+// For a recurring chore, "current" means closest to today, not the oldest
+// unresolved instance in the chore's entire history — a single instance
+// that never got actioned (a child never touched one day of a daily chore,
+// say) would otherwise pin the display on that stale day forever, hiding
+// every day since even once they're all resolved. Preference order: today's
+// instance if it's unresolved, else the most recent unresolved *past* day,
+// else the soonest unresolved upcoming day, else (everything verified) the
+// most recent instance overall.
+function displayInstance(chore: ChoreRow, today: string): ChoreInstanceSummary | null {
   const sorted = sortedInstances(chore);
-  const notFullyVerified = sorted.find(
+  if (sorted.length === 0) return null;
+
+  const unresolved = sorted.filter(
     (inst) =>
       inst.assignments.length === 0 || inst.assignments.some((a) => !VERIFIED_STATUSES.includes(a.status))
   );
-  return notFullyVerified ?? sorted[sorted.length - 1] ?? null;
+  if (unresolved.length === 0) return sorted[sorted.length - 1];
+
+  const todays = unresolved.find((i) => i.date === today);
+  if (todays) return todays;
+
+  const pastUnresolved = unresolved.filter((i) => i.date < today);
+  if (pastUnresolved.length > 0) return pastUnresolved[pastUnresolved.length - 1];
+
+  return unresolved[0];
 }
 
 function nextInstance(chore: ChoreRow, today: string): ChoreInstanceSummary | null {
@@ -252,7 +271,7 @@ export default function ChoresView({
   // Active / Ongoing rows show instance-level detail (Schedule, Deadline,
   // Points, Assigned To / Accepted By, Status) per spec.
   function renderInstanceRow(c: ChoreRow) {
-    const inst = displayInstance(c);
+    const inst = displayInstance(c, today);
     return (
       <button
         onClick={() => setSelectedChoreId(c.id)}
@@ -293,7 +312,7 @@ export default function ChoresView({
   // couldn't submit themselves. The chore name/date area still opens the
   // popup for anything else (editing, full history, etc).
   function renderOngoingRow(c: ChoreRow) {
-    const inst = displayInstance(c);
+    const inst = displayInstance(c, today);
     return (
       <div className="w-full rounded-lg border border-calm-green/20 bg-white px-4 py-3">
         <button onClick={() => setSelectedChoreId(c.id)} className="block w-full text-left">
