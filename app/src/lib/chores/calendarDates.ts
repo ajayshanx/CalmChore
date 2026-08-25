@@ -6,13 +6,14 @@ export function todayStr(): string {
   return toDateStr(new Date());
 }
 
-// "Today" as understood in a specific IANA timezone (the family's stored
-// timezone — see families.timezone), not the server's own UTC clock. Day/week
-// boundaries are meant to follow the family's timezone regardless of where
-// the server runs or which timezone a child is currently logging in from —
-// see "Timezone" in "Calm Chore Setup.txt". Falls back to server-UTC "today"
-// if the stored value isn't a valid IANA zone.
-export function todayStrInTimezone(timezone: string | null | undefined): string {
+// A given instant, as a calendar date (YYYY-MM-DD) in a specific IANA
+// timezone (the family's stored timezone — see families.timezone) rather
+// than the server's own UTC clock. Falls back to server-UTC if the stored
+// value isn't a valid IANA zone. Used both for "today" (see below, passing
+// `new Date()`) and for converting a specific timestamp — e.g. a chore
+// submission's submitted_at — into "which calendar day did this actually
+// happen on" for that family.
+export function dateStrInTimezone(date: Date, timezone: string | null | undefined): string {
   try {
     // en-CA formats as YYYY-MM-DD, which lines up with the rest of this file.
     return new Intl.DateTimeFormat("en-CA", {
@@ -20,10 +21,18 @@ export function todayStrInTimezone(timezone: string | null | undefined): string 
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
-    }).format(new Date());
+    }).format(date);
   } catch {
-    return todayStr();
+    return toDateStr(date);
   }
+}
+
+// "Today" as understood in a specific IANA timezone — day/week boundaries
+// are meant to follow the family's timezone regardless of where the server
+// runs or which timezone a child is currently logging in from — see
+// "Timezone" in "Calm Chore Setup.txt".
+export function todayStrInTimezone(timezone: string | null | undefined): string {
+  return dateStrInTimezone(new Date(), timezone);
 }
 
 export function addDaysStr(dateStr: string, days: number): string {

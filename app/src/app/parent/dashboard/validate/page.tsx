@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getFamilyTimezone } from "@/lib/families";
-import { todayStrInTimezone } from "@/lib/chores/calendarDates";
+import { dateStrInTimezone } from "@/lib/chores/calendarDates";
 import ValidateView, { type ValidationRow, type FreezeRequestRow } from "./ValidateView";
 
 export default async function ValidatePage() {
@@ -25,12 +25,12 @@ export default async function ValidatePage() {
     redirect("/parent/finish-setup");
   }
 
-  // Needed to flag submissions for a day other than today — see the
-  // scheduledDate handling below. This is exactly the distinction that
-  // matters for streak/freeze correctness (see streakEngine.ts), but until
-  // now the Validate screen gave parents no way to see it.
+  // Needed to flag submissions for a day other than the chore's scheduled
+  // date — see the scheduledDate handling below. This is exactly the
+  // distinction that matters for streak/freeze correctness (see
+  // streakEngine.ts), but until now the Validate screen gave parents no way
+  // to see it.
   const timezone = await getFamilyTimezone(supabase, parent.family_id);
-  const today = todayStrInTimezone(timezone);
 
   const [{ data: rows }, { data: freezeRows }] = await Promise.all([
     supabase
@@ -69,13 +69,22 @@ export default async function ValidatePage() {
       }
 
       const scheduledDate = instance?.scheduled_date ?? null;
-      // Precomputed once here (rather than threading `today` into both
+      // Compare against the calendar date the child actually submitted on
+      // (in the family's timezone), NOT the date the parent happens to be
+      // viewing this screen — otherwise an on-time, same-day submission
+      // could get flagged "late" purely because a parent reviews it later.
+      const submittedDateStr = row.submitted_at ? dateStrInTimezone(new Date(row.submitted_at), timezone) : null;
+      // Precomputed once here (rather than threading this into both
       // ValidateView and ValidatePopup) — this is exactly the "which day is
       // this chore actually for" distinction that matters for streak/freeze
       // correctness (see streakEngine.ts), so it's worth surfacing directly
       // instead of leaving a parent to infer it from submission time alone.
       const dateFlag: "late" | "early" | null =
-        !scheduledDate || scheduledDate === today ? null : scheduledDate < today ? "late" : "early";
+        !scheduledDate || !submittedDateStr || scheduledDate === submittedDateStr
+          ? null
+          : scheduledDate < submittedDateStr
+            ? "late"
+            : "early";
 
       return {
         assignmentId: row.id,
