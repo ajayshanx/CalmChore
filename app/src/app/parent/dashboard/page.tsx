@@ -4,9 +4,17 @@ import { createClient } from "@/lib/supabase/server";
 import { pillClass } from "@/lib/chores/calendarColours";
 import { tierChipClass, getTierStatus } from "@/lib/tiers";
 import TierShield from "@/components/icons/TierShield";
+import { getFamilyTimezone } from "@/lib/families";
+import { todayStrInTimezone } from "@/lib/chores/calendarDates";
+import MarkCompleteButton from "./chores/MarkCompleteButton";
 
 const ONGOING_STATUSES = ["assigned", "accepted", "unverified", "incomplete"];
 const COMPLETED_STATUSES = ["verified_complete", "verified_partially_complete"];
+// Only these (not "unverified", which is already submitted and just
+// awaiting review) are eligible for a parent to record on the child's
+// behalf — same eligibility as the Ongoing Chores tab's Mark Complete
+// button (see markCompleteByParent).
+const MARK_COMPLETE_ELIGIBLE_STATUSES = ["assigned", "accepted", "incomplete"];
 
 const STATUS_LABELS: Record<string, string> = {
   assigned: "Assigned",
@@ -45,6 +53,12 @@ export default async function ParentDashboardPage() {
 
   const childIds = (children ?? []).map((c) => c.id);
 
+  // Needed to flag which "Chores Currently Ongoing" rows are past their
+  // scheduled date and eligible for a parent to record complete inline —
+  // same timezone-aware "today" as the Chores tab and Validate screen.
+  const timezone = await getFamilyTimezone(supabase, parent.family_id);
+  const today = todayStrInTimezone(timezone);
+
   const [{ data: ledgerRows }, { data: assignmentStatusRows }, { data: ongoingRows }, { data: streakRows }] =
     await Promise.all([
       childIds.length
@@ -60,7 +74,7 @@ export default async function ParentDashboardPage() {
       supabase
         .from("chore_assignments")
         .select(
-          `id, status, chore_instances ( scheduled_date, chores ( name ) ), children ( nickname, username, accent_colour )`
+          `id, status, chore_instances ( scheduled_date, chores ( name ) ), children ( nickname, username, accent_colour, is_parent_managed )`
         )
         .in("status", ONGOING_STATUSES)
         .is("hidden_by_break_id", null)
@@ -102,6 +116,7 @@ export default async function ParentDashboardPage() {
       choreName: chore?.name ?? "Chore",
       childLabel: child?.nickname || child?.username || "Child",
       colour: child?.accent_colour ?? "neutral",
+      isParentManaged: child?.is_parent_managed ?? false,
     };
   });
 
@@ -190,23 +205,36 @@ export default async function ParentDashboardPage() {
         </div>
         {ongoingChores.length > 0 ? (
           <ul className="flex flex-col gap-2">
-            {ongoingChores.map((c) => (
-              <li
-                key={c.id}
-                className="flex items-center justify-between rounded-lg border border-calm-green/20 bg-white px-4 py-3"
-              >
-                <div>
-                  <p className="font-medium">{c.choreName}</p>
-                  <p className="text-sm text-calm-text/60">
-                    {c.childLabel}
-                    {c.date ? ` · ${c.date}` : ""}
-                  </p>
-                </div>
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${pillClass(c.colour)}`}>
-                  {STATUS_LABELS[c.status] ?? c.status}
-                </span>
-              </li>
-            ))}
+            {ongoingChores.map((c) => {
+              // Past-due, still-unsubmitted, and not a Parent-Managed child
+              // (who already has their own Manage-tab Mark Done flow) — lets
+              // a parent record it here too, without opening the Chores tab.
+              const canMarkComplete =
+                !!c.date &&
+                c.date < today &&
+                MARK_COMPLETE_ELIGIBLE_STATUSES.includes(c.status) &&
+                !c.isParentManaged;
+              return (
+                <li
+                  key={c.id}
+                  className="flex items-center justify-between rounded-lg border border-calm-green/20 bg-white px-4 py-3"
+                >
+                  <div>
+                    <p className="font-medium">{c.choreName}</p>
+                    <p className="text-sm text-calm-text/60">
+                      {c.childLabel}
+                      {c.date ? ` · ${c.date}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${pillClass(c.colour)}`}>
+                      {STATUS_LABELS[c.status] ?? c.status}
+                    </span>
+                    {canMarkComplete && <MarkCompleteButton assignmentId={c.id} />}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className="text-sm text-calm-text/60">Nothing ongoing right now.</p>
