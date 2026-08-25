@@ -45,7 +45,7 @@ export default async function ParentChoresPage() {
       .order("name", { ascending: true }),
     supabase
       .from("children")
-      .select("id, nickname, username")
+      .select("id, nickname, username, is_parent_managed")
       .eq("family_id", parent.family_id)
       .order("created_at", { ascending: true }),
     // "Chore Ideas from other families" — the chores_ideas_select RLS policy
@@ -64,6 +64,7 @@ export default async function ParentChoresPage() {
   const childLabelMap = new Map(
     (children ?? []).map((c) => [c.id, c.nickname || c.username || "Unnamed child"])
   );
+  const childParentManagedMap = new Map((children ?? []).map((c) => [c.id, c.is_parent_managed]));
 
   const choreRows = (chores ?? []).map((c) => ({
     id: c.id,
@@ -81,10 +82,12 @@ export default async function ParentChoresPage() {
       deadlineAt: inst.deadline_at,
       points: inst.points,
       assignments: (inst.chore_assignments ?? []).map((a) => ({
+        assignmentId: a.id,
         childId: a.child_id,
         childLabel: childLabelMap.get(a.child_id) ?? "Unknown",
         status: a.status,
         awardedPoints: a.awarded_points,
+        isParentManaged: childParentManagedMap.get(a.child_id) ?? false,
       })),
     })),
   }));

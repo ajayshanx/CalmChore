@@ -8,6 +8,7 @@ import { notifyChild } from "@/lib/notifications";
 import { todayStrInTimezone } from "@/lib/chores/calendarDates";
 import { getFamilyTimezone } from "@/lib/families";
 import { embedText, choreEmbeddingText } from "@/lib/embeddings";
+import { advanceStreakThrough, reverseAutoFreezeForLateCompletion } from "@/lib/points/streakEngine";
 
 const RECURRENCE_TYPES: RecurrenceType[] = ["none", "daily", "weekly", "monthly", "manual"];
 const CHORE_STATUSES = ["active", "inactive"];
@@ -265,7 +266,13 @@ export type ChoreInstanceRow = {
   scheduledTime: string | null;
   deadlineAt: string | null;
   points: number;
-  assignments: { childLabel: string; status: string }[];
+  assignments: {
+    assignmentId: string;
+    childId: string;
+    childLabel: string;
+    status: string;
+    isParentManaged: boolean;
+  }[];
 };
 
 // Plain data fetch (not a form action) — called directly from the chore
@@ -282,7 +289,7 @@ export async function listChoreInstances(choreId: string): Promise<ChoreInstance
     .from("chore_instances")
     .select(
       `id, scheduled_date, scheduled_time, deadline_at, points,
-       chore_assignments ( status, children ( nickname, username ) )`
+       chore_assignments ( id, child_id, status, children ( nickname, username, is_parent_managed ) )`
     )
     .eq("chore_id", choreId)
     .order("scheduled_date", { ascending: true });
@@ -296,11 +303,136 @@ export async function listChoreInstances(choreId: string): Promise<ChoreInstance
     assignments: (row.chore_assignments ?? []).map((a) => {
       const child = Array.isArray(a.children) ? a.children[0] : a.children;
       return {
+        assignmentId: a.id,
+        childId: a.child_id,
         childLabel: child?.nickname || child?.username || "Child",
         status: a.status,
+        isParentManaged: child?.is_parent_managed ?? false,
       };
     }),
   }));
+}
+
+// Lets a parent record that a chore was actually done by a child who has
+// their own login but couldn't submit it themselves (no device handy, no
+// time, forgot) — per product discussion, this is deliberately distinct
+// from Manage-tab markChoreDone (which is the *normal*, expected flow for
+// fully Parent-Managed children). Here the child still did the work; the
+// parent is just recording it on their behalf, which is why every visible
+// trace of this (notification, status history) says so explicitly rather
+// than reading as "parent completed the chore." No photo is requested even
+// if the chore normally requires one — the parent is vouching in person,
+// which the proof-photo requirement (built for asynchronous trust) doesn't
+// really apply to. Always awards full points; there's no partial/incomplete
+// variant here because the premise is "this was actually finished" — a
+// chore that wasn't fully done should go through the normal child-submits,
+// parent-validates flow instead, where that nuance belongs.
+export async function markCompleteByParent(_prevState: unknown, formData: FormData) {
+  const assignmentId = String(formData.get("assignmentId") || "");
+  if (!assignmentId) {
+    return { error: "Missing chore." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "You must be logged in." };
+  }
+
+  // RLS (chore_assignments_family) already scopes this to the parent's own
+  // family — this select doubles as the authorization check, same pattern
+  // as validateChoreAssignment.
+  const { data: assignment } = await supabase
+    .from("chore_assignments")
+    .select(
+      "id, status, child_id, chore_instances ( scheduled_date, points, chores ( name, family_id ) ), children ( is_parent_managed )"
+    )
+    .eq("id", assignmentId)
+    .maybeSingle();
+
+  if (!assignment) {
+    return { error: "Chore not found." };
+  }
+  const childRow = Array.isArray(assignment.children) ? assignment.children[0] : assignment.children;
+  if (childRow?.is_parent_managed) {
+    return { error: "For Parent-Managed children, use Mark Done on the Manage tab instead." };
+  }
+  if (!["assigned", "accepted", "incomplete"].includes(assignment.status)) {
+    return { error: "This chore isn't available to record right now." };
+  }
+
+  const instance = Array.isArray(assignment.chore_instances)
+    ? assignment.chore_instances[0]
+    : assignment.chore_instances;
+  const chore = Array.isArray(instance?.chores) ? instance.chores[0] : instance?.chores;
+  const fullPoints = instance?.points ?? 0;
+  const now = new Date().toISOString();
+
+  const { error: updateError } = await supabase
+    .from("chore_assignments")
+    .update({
+      status: "verified_complete",
+      awarded_points: fullPoints,
+      submitted_at: now,
+      validated_at: now,
+      validated_by_parent_id: user.id,
+      proof_photo_url: null,
+    })
+    .eq("id", assignmentId);
+
+  if (updateError) {
+    return { error: updateError.message };
+  }
+
+  await supabase.from("chore_status_events").insert({
+    chore_assignment_id: assignmentId,
+    event_type: "validated_complete",
+    reason: "Completed by the child — recorded by a parent since they couldn't submit it themselves.",
+  });
+
+  if (fullPoints > 0) {
+    await supabase.from("points_ledger").insert({
+      child_id: assignment.child_id,
+      delta: fullPoints,
+      type: "chore_award",
+      reference_id: assignmentId,
+      description: chore?.name ?? "Chore",
+    });
+  }
+
+  if (chore?.family_id) {
+    await notifyChild(supabase, {
+      familyId: chore.family_id,
+      childId: assignment.child_id,
+      action: "chore_assessment",
+      message: `Your parent recorded "${chore.name ?? "a chore"}" as complete on your behalf, since you hadn't submitted it.`,
+      link: "/child/dashboard/my-chores",
+    });
+    if (fullPoints > 0) {
+      await notifyChild(supabase, {
+        familyId: chore.family_id,
+        childId: assignment.child_id,
+        action: "point_awarding",
+        message: `You earned ${fullPoints} point${fullPoints === 1 ? "" : "s"} for ${chore?.name ?? "Chore"}.`,
+        link: "/child/dashboard/points",
+      });
+    }
+  }
+
+  // Same scheduled-date-driven streak/freeze handling as validateChoreAssignment.
+  const day = instance?.scheduled_date;
+  if (day) {
+    await reverseAutoFreezeForLateCompletion(supabase, assignment.child_id, day);
+    await advanceStreakThrough(supabase, assignment.child_id, day);
+  }
+
+  revalidatePath("/parent/dashboard/chores");
+  revalidatePath("/parent/dashboard/calendar");
+  revalidatePath("/parent/dashboard");
+  revalidatePath("/child/dashboard");
+  return { success: true };
 }
 
 // Manual single-instance add for an existing chore, per "Calm Chore

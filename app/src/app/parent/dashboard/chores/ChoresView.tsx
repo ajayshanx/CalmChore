@@ -1,19 +1,70 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import CreateChoreForm, { type ChorePrefill } from "./CreateChoreForm";
 import ChoreDetailPopup from "./ChoreDetailPopup";
 import ChoreIdeaCard from "./ChoreIdeaCard";
 import AlphaChoreList from "./AlphaChoreList";
 import FaceIcon, { type FaceStatus } from "@/components/icons/FaceIcon";
 import { AGE_GROUPS, EXAMPLE_CHORES } from "@/lib/chores/exampleChores";
-import { searchChoreIdeas, type ChoreIdeaSearchResult } from "./actions";
+import { searchChoreIdeas, markCompleteByParent, type ChoreIdeaSearchResult } from "./actions";
+
+const markCompleteInitialState: { error?: string; success?: boolean } = {};
+
+// Inline action shown per-child on the Ongoing Chores tab, for a child who
+// isn't Parent-Managed and whose assignment is still un-submitted (assigned/
+// accepted/incomplete) — lets a parent record that the chore was actually
+// done when the child couldn't submit it themselves. Two-step confirm (tap
+// once to reveal Confirm/Cancel) since this awards points immediately.
+function MarkCompleteButton({ assignmentId }: { assignmentId: string }) {
+  const [state, formAction, pending] = useActionState(markCompleteByParent, markCompleteInitialState);
+  const [confirming, setConfirming] = useState(false);
+
+  if (state?.success) {
+    return <span className="text-xs font-medium text-emerald-700">✓ Recorded</span>;
+  }
+
+  return (
+    <form action={formAction} className="flex items-center gap-1.5">
+      <input type="hidden" name="assignmentId" value={assignmentId} />
+      {confirming ? (
+        <>
+          <button
+            type="submit"
+            disabled={pending}
+            className="rounded-full border border-calm-green bg-calm-greenLight px-2 py-0.5 text-xs font-medium text-calm-green disabled:opacity-40"
+          >
+            {pending ? "Saving…" : "Confirm"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirming(false)}
+            className="text-xs text-calm-text/50 underline"
+          >
+            Cancel
+          </button>
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="whitespace-nowrap rounded-full border border-calm-green/30 px-2 py-0.5 text-xs font-medium text-calm-green"
+        >
+          Mark Complete
+        </button>
+      )}
+      {state?.error && <p className="text-xs text-red-600">{state.error}</p>}
+    </form>
+  );
+}
 
 export type InstanceAssignment = {
+  assignmentId: string;
   childId: string;
   childLabel: string;
   status: string;
   awardedPoints: number | null;
+  isParentManaged: boolean;
 };
 
 export type ChoreInstanceSummary = {
@@ -235,6 +286,50 @@ export default function ChoresView({
     );
   }
 
+  // Ongoing tab specifically — same instance-level detail as
+  // renderInstanceRow, but each assignment line also carries an inline Mark
+  // Complete action when eligible, so a parent doesn't need to open the
+  // chore popup at all to record a chore the child already finished but
+  // couldn't submit themselves. The chore name/date area still opens the
+  // popup for anything else (editing, full history, etc).
+  function renderOngoingRow(c: ChoreRow) {
+    const inst = displayInstance(c);
+    return (
+      <div className="w-full rounded-lg border border-calm-green/20 bg-white px-4 py-3">
+        <button onClick={() => setSelectedChoreId(c.id)} className="block w-full text-left">
+          <p className="font-medium">{c.name}</p>
+          {inst && (
+            <p className="mt-1 text-sm text-calm-text/60">
+              {formatInstanceDate(inst)} · {inst.points} pt{inst.points === 1 ? "" : "s"}
+              {inst.deadlineAt ? ` · Due ${new Date(inst.deadlineAt).toLocaleString()}` : ""}
+            </p>
+          )}
+        </button>
+        {inst && inst.assignments.length > 0 && (
+          <ul className="mt-2 flex flex-col gap-1.5">
+            {inst.assignments.map((a) => {
+              const eligible =
+                ["assigned", "accepted", "incomplete"].includes(a.status) && !a.isParentManaged;
+              return (
+                <li
+                  key={a.assignmentId}
+                  className="flex flex-wrap items-center justify-between gap-2 text-sm text-calm-text/60"
+                >
+                  <span className="flex items-center gap-1">
+                    {a.childLabel}:
+                    {isOutcome(a.status) && <FaceIcon status={a.status} size={14} />}
+                    {STATUS_LABELS[a.status] ?? a.status}
+                  </span>
+                  {eligible && <MarkCompleteButton assignmentId={a.assignmentId} />}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    );
+  }
+
   // Inactive / All Chores rows show basic chore info only — no per-instance
   // assignment/status detail, per spec.
   function renderBasicRow(c: ChoreRow) {
@@ -310,7 +405,9 @@ export default function ChoresView({
             items={tabChores}
             search={search}
             emptyLabel={tab === "all" ? "No chores yet." : `No ${tab} chores yet.`}
-            renderItem={tab === "active" || tab === "ongoing" ? renderInstanceRow : renderBasicRow}
+            renderItem={
+              tab === "ongoing" ? renderOngoingRow : tab === "active" ? renderInstanceRow : renderBasicRow
+            }
           />
         </div>
       ) : (
