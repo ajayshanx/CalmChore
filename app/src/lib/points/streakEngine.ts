@@ -1,8 +1,26 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { addDaysStr, mondayWeekStart } from "@/lib/chores/calendarDates";
+import { addDaysStr, mondayWeekStart, todayStr } from "@/lib/chores/calendarDates";
 import { getTierStatus, getWeeklyFreeFreezeCap } from "@/lib/tiers";
 import { maybeAwardWeeklyStreakBonus } from "@/lib/points/weeklyBonus";
+
+// How many days a day with zero submission is left as "pending" (not yet
+// "missed") before the walk gives up waiting and resolves it either way.
+// Added after two back-to-back incidents (Sept 2026) where kids who
+// habitually submit/get validated a couple of days late had their streaks
+// broken by the automatic daily walk before they ever got the chance to
+// catch up — even though the chore was always eventually completed. This
+// uses plain UTC "today" (see todayStr()) rather than each family's own
+// timezone: a grace window measured in whole days doesn't need to be
+// precise to the hour, and every call site would otherwise need to thread a
+// family timezone through just for this.
+const UNSUBMITTED_GRACE_DAYS = 3;
+
+function daysSince(day: string, now: string): number {
+  const dayMs = new Date(`${day}T00:00:00Z`).getTime();
+  const nowMs = new Date(`${now}T00:00:00Z`).getTime();
+  return Math.floor((nowMs - dayMs) / 86400000);
+}
 
 // How many of this week's free freezes (per getWeeklyFreeFreezeCap, keyed
 // off the child's *current* tier) are still unused, as of `today`. Mirrors
@@ -86,7 +104,8 @@ type DayClassification = "break" | "frozen" | "empty" | "good" | "pending" | "mi
 async function classifyDay(
   supabase: SupabaseClient,
   childId: string,
-  day: string
+  day: string,
+  now: string
 ): Promise<DayClassification> {
   const { data: brk } = await supabase
     .from("chore_breaks")
@@ -119,6 +138,11 @@ async function classifyDay(
     return "good";
   }
   if (rows.some((r) => r.status === "unverified")) return "pending";
+  // Nothing submitted at all yet — hold off on calling this "missed" until
+  // it's been unattempted for UNSUBMITTED_GRACE_DAYS days, so a family that
+  // routinely does (and gets validated for) chores a couple of days late
+  // doesn't get the streak broken out from under them mid-catch-up.
+  if (daysSince(day, now) < UNSUBMITTED_GRACE_DAYS) return "pending";
   return "missed";
 }
 
@@ -165,10 +189,11 @@ export async function advanceStreakThrough(
   if (cursor < createdDateStr) cursor = createdDateStr; // days before the child existed are never "required"
 
   let mutated = false;
+  const now = todayStr();
 
   while (cursor <= throughDay) {
     const day = cursor;
-    const classification = await classifyDay(supabase, childId, day);
+    const classification = await classifyDay(supabase, childId, day, now);
 
     if (classification === "pending") {
       break; // this day's (and anything after it's) fate isn't known yet
